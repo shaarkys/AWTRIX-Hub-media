@@ -81,6 +81,9 @@ def main() -> None:
     assert settings["every"][1] == {"default": "10", "min": "5", "max": "60", "unit": "min", "group": "Freshness"}
     assert all(settings[name][1]["default"] == "true" for name in ("indoor", "outdoor", "extra", "rain", "wind"))
     assert settings["show_names"][1]["default"] == "false"
+    assert settings["show_direction"][1]["default"] == "false"
+    assert settings["show_minmax"][1]["default"] == "false"
+    assert "import math" in source
     font_source = (REPO / "source-notices/awtrix-small.bdf").read_text(encoding="utf-8")
     assert re.search(r"ENCODING 176\nSWIDTH [^\n]+\nDWIDTH 3 0", font_source), "degree advance changed"
 

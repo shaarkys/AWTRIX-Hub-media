@@ -11,6 +11,8 @@
 # @config station_id text "Station ID filter" default="" maxlen=64 group="Account" help="Empty shows all owned stations."
 # @config seconds number "Seconds per page" default=6 min=3 max=12 unit=s group="Display"
 # @config show_names bool "Show room names" default=false group="Display" help="Enable to distinguish modules in different rooms."
+# @config show_direction bool "Show wind direction" default=false group="Display" help="Adds a direction and daily maximum page; wind and gust stay on the main page."
+# @config show_minmax bool "Show daily min/max" default=false group="Display" help="Adds today's minimum and maximum outdoor temperatures."
 # @config every number "Refresh interval" default=10 min=5 max=60 unit=min group="Freshness"
 # @config stale_minutes number "Stale after" default=45 min=20 max=240 unit=min group="Freshness"
 # @config max_age_minutes number "No data after" default=180 min=60 max=1440 unit=min group="Freshness"
@@ -21,6 +23,7 @@
 # @config qto number "Quiet until" default=8 min=0 max=23 group="Quiet hours"
 
 import json
+import math
 import oauth
 import string
 
@@ -28,7 +31,7 @@ class NetatmoV2 : NetatmoArtwork
   var enabled, station_id
   var page_ms, poll_ms, stale_ms, max_age_ms
   var co2_low, co2_high
-  var show_names
+  var show_names, show_direction, show_minmax
   var quiet, quiet_from, quiet_to
   var modules, module_order
   var pages, frozen_pages, shown_at
@@ -56,6 +59,8 @@ class NetatmoV2 : NetatmoArtwork
     self.co2_high = int(clamp(num(store.get("chigh"), 1500), 500, 5000))
     if self.co2_high <= self.co2_low self.co2_high = self.co2_low + 1 end
     self.show_names = store.get("show_names", false) == true
+    self.show_direction = store.get("show_direction", false) == true
+    self.show_minmax = store.get("show_minmax", false) == true
     self.quiet = store.get("quiet", false) == true
     self.quiet_from = int(clamp(num(store.get("qfrom"), 23), 0, 23))
     self.quiet_to = int(clamp(num(store.get("qto"), 8), 0, 23))
@@ -381,7 +386,7 @@ class NetatmoV2 : NetatmoArtwork
           if self.has_value(values, "Temperature", "Humidity", nil)
             result.push(self.page_for(module, "climate")) added += 1
           end
-          if added < 2 && self.has_value(values, "min_temp", "max_temp", nil)
+          if self.show_minmax && added < 2 && self.has_value(values, "min_temp", "max_temp", nil)
             result.push(self.page_for(module, "range")) added += 1
           end
         elif kind == "rain"
@@ -395,7 +400,7 @@ class NetatmoV2 : NetatmoArtwork
           if self.has_value(values, "WindStrength", "GustStrength", nil)
             result.push(self.page_for(module, "wind")) added += 1
           end
-          if added < 2 && self.has_value(values, "WindAngle", "GustAngle", "max_wind_str")
+          if self.show_direction && added < 2 && self.has_value(values, "WindAngle", "GustAngle", "max_wind_str")
             result.push(self.page_for(module, "wind_dir")) added += 1
           end
         end

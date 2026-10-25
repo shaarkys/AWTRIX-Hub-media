@@ -1,6 +1,7 @@
 # Focused, device-free Netatmo artwork harness.
 # Run from the repository root with the pinned Berry 1.1 32-bit interpreter.
 import json
+import math
 
 var drawing = []
 var text_calls = []
@@ -58,7 +59,7 @@ end
 
 def text(x, y, value, color)
   assert(type(value) == "string", "text value must be a string")
-  assert(x == 20 && text_width(value) <= 32, "text outside 32px metric lane: " + value)
+  assert((x == 20 && text_width(value) <= 32) || (x == 24 && text_width(value) <= 28), "text outside 32px metric lane: " + value)
   assert(y >= 1 && y <= 15, "text baseline outside panel")
   var index = 0
   while index < size(value)
@@ -164,7 +165,7 @@ artwork.room_scene(0, "indoor", "climate", false)
 var main_room_art = json.dump(drawing)
 clear()
 artwork.room_scene(0, "extra", "climate", false)
-check(json.dump(drawing) != main_room_art, "main station and extra couch scenes are identical")
+check(json.dump(drawing) == main_room_art, "all indoor locations must use the house symbol")
 
 for index : 0 .. size(pages) - 1
   render(pages[index], 0, index, size(pages), "fresh")
@@ -210,18 +211,19 @@ render(page("rain", "rain", "DRY", {"Rain":0, "sum_rain_1":0}), 0, 0, 1, "fresh"
 # units remain readable at the same time.
 var edge_air = page("indoor", "air", "EDGE", {"CO2":10000, "Pressure":10000, "Noise":-10000})
 render(edge_air, 0, 0, 1, "fresh")
-check(has_text_value("CO2 HI"), "CO2 edge was silently clamped")
+check(has_text_value("HI ppm"), "CO2 edge was silently clamped")
 check(has_text_value("HIhPa"), "pressure edge was silently clamped or lost hPa")
 check(!has_text_value("AIR OK"), "high CO2 incorrectly claimed AIR OK")
 render(page("extra", "air", "COUCH", {"CO2":987}), 500, 0, 1, "fresh")
-check(has_text_value("ppm") && !has_text_value("NO AUX"), "normal indoor CO2-only page must show its unit without a missing-data alert")
+check(has_text_value("987 ppm") && !has_text_value("NO AUX"), "normal indoor CO2-only page must show its unit without a missing-data alert")
+check(size(text_calls) == 1 && text_calls[0][1] == 10, "CO2-only view uses one centered reading")
 render(edge_air, 1250, 0, 1, "fresh")
 check(has_text_value("-HIdB"), "noise edge was silently clamped or lost dB")
 
 render(page("rain", "rain", "UNITS", {"Rain":1.2, "sum_rain_1":2.3}), 0, 0, 1, "fresh")
 check(has_text_value("R1.2mm") && has_text_value("1H2.3mm"), "rain metric units are not explicit")
 render(page("rain", "rain_day", "DAY", {"sum_rain_24":12.5}), 0, 0, 1, "fresh")
-check(has_text_value("12.5mm") && has_fill(1, 0), "24-hour rain total lost decimal precision or its badge")
+check(has_text_value("12.5mm") && has_text_value("24H"), "24-hour rain total lost decimal precision or its period label")
 render(page("rain", "rain_day", "DAY", {"sum_rain_24":-998}), 0, 0, 1, "fresh")
 check(has_text_value("-998mm"), "24-hour negative total was silently altered")
 render(page("rain", "rain", "NEG", {"Rain":-998.9, "sum_rain_1":-999}), 0, 0, 1, "fresh")
@@ -232,14 +234,14 @@ check(has_text_value("W12.4KPH") && has_text_value("G23.9KPH"), "wind/gust prefi
 render(page("wind", "wind", "WIDE", {"WindStrength":98.9, "GustStrength":98.9}), 0, 0, 1, "fresh")
 check(has_text_value("W98.9KPH") && has_text_value("G98.9KPH"), "maximum decimal wind footprint exceeded 32px")
 render(page("wind", "wind_dir", "WIND", {"WindAngle":225, "GustStrength":23.9, "max_wind_str":28.2}), 0, 0, 1, "fresh")
-check(has_text_value("D225DEG") && has_text_value("M28KPH"), "direction or daily max unit/prefix missing")
+check(has_text_value("225°") && has_text_value("M28KPH"), "direction or daily max unit/prefix missing")
 
 # At most 24 pages use the full progress track; the last page must reach its
 # scaled endpoint without drawing over either metric baseline.
 render(page("indoor", "climate", "TRACK", {"Temperature":0, "Humidity":0}), 0, 23, 24, "fresh")
 check(has_fill(51, 15), "24-page progress endpoint is not scaled to the track")
 for call : drawing
-  if call[0] == "text" check(call[1] == 20 && (call[2] == 6 || call[2] == 14), "metric text collided with progress row") end
+  if call[0] == "text" check((call[1] == 20 || call[1] == 24) && (call[2] == 6 || call[2] == 10 || call[2] == 14), "metric text collided with progress row") end
 end
 
 # Fahrenheit conversion affects only temperature display and remains bounded.
@@ -282,6 +284,13 @@ artwork.wind_scene(500, false, nil)
 var calm_scene = json.dump(drawing)
 render(wind_active, 500, 0, 1, "fresh")
 check(json.dump(drawing) != calm_frame, "zero and active wind look identical")
+var rotor_frame = json.dump(drawing)
+render(wind_active, 650, 0, 1, "fresh")
+check(json.dump(drawing) != rotor_frame, "active turbine blades do not rotate over elapsed time")
+render(wind_zero, 650, 0, 1, "fresh")
+check(json.dump(drawing) == calm_frame, "calm turbine should stay still")
+render(wind_active, 4500, 0, 1, "fresh")
+check(json.dump(drawing) == rotor_frame, "turbine does not loop after four seconds")
 var wind_max_only = page("wind", "wind", "MAX", {"max_wind_str":50})
 clear()
 artwork.wind_scene(500, artwork.page_active(wind_max_only, "wind"), nil)

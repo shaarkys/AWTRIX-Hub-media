@@ -181,14 +181,22 @@ check(requests[0].find("url") == "https://api.netatmo.com/api/getstationsdata", 
 check(requests[0].find("opts").find("cap") == 65536, "response cap is explicit and bounded")
 deliver(app, load_fixture("stations-v1.json"), 200)
 check(!app.busy && size(app.module_order) == 5, "all five API module types are discovered by ID and type")
-check(size(app.pages) == 10, "five complete modules produce at most two pages each")
+check(size(app.pages) == 8, "default pages focus on current readings with optional direction/range hidden")
 check(app.show_names == false && app.pages[0].find("show_name") == false, "room names are off by default")
 for id : app.module_order check(page_count_for(app, id) <= 2, "module page count is capped at two") end
 check(app.modules.find("synthetic-wind-01").find("values").find("WindStrength") == 0, "zero wind remains a valid reading")
 check(app.modules.find("synthetic-rain-01").find("values").find("Rain") == 0, "zero rain remains a valid reading")
-check(view_exists(app, "range") && view_exists(app, "rain_day") && view_exists(app, "wind_dir"), "type-specific second pages are built")
+check(!view_exists(app, "range") && view_exists(app, "rain_day") && !view_exists(app, "wind_dir"), "direction and daily extrema are off by default")
 app.loop()
 check(size(requests) == 0, "successful poll does not overlap another request")
+for options : [{"show_direction":true}, {"show_minmax":true}, {"show_direction":true, "show_minmax":true}]
+  app = new_app(options)
+  deliver(app, load_fixture("stations-v1.json"), 200)
+  check(view_exists(app, "wind_dir") == options.find("show_direction", false), "wind detail switch is independent")
+  check(view_exists(app, "range") == options.find("show_minmax", false), "daily extrema switch is independent")
+  check(view_exists(app, "wind") && size(app.module_order) == 5, "optional pages preserve current wind and discovery")
+  check(size(app.pages) == (size(options) == 2 ? 10 : 9), "optional details add only the requested pages")
+end
 app = new_app({"show_names":true})
 deliver(app, load_fixture("stations-v1.json"), 200)
 for page : app.pages check(page.find("show_name") == true, "optional room labels reach every module page") end
@@ -235,7 +243,7 @@ check(size(app.module_order) == 1 && size(app.pages) == 0 && app.status_code == 
 
 app = new_app({})
 deliver(app, load_fixture("stations-invalid-values.json"), 200)
-check(size(app.module_order) == 3 && size(app.pages) == 4, "invalid fields become offline pages while valid zero wind remains visible")
+check(size(app.module_order) == 3 && size(app.pages) == 3, "invalid fields become offline pages while valid zero wind remains visible")
 check(app.modules.find("synthetic-invalid-01").find("received") == nil, "invalid and string-valued measurements never become a sample")
 check(app.modules.find("synthetic-wind-zero").find("values").find("WindAngle") == 0, "zero direction is not treated as missing")
 
@@ -411,6 +419,6 @@ check(has_label("W0.0KPH"), "generated artwork renders calm wind as a reading")
 rain_page.find("values")["Rain"] = 1
 app.frozen_pages = [rain_page, rain_page]
 app.shown_at = 0 clock_ms = 6000 app.draw()
-check(has_pixel(4, 0, 0xC8F4DD), "each page starts its four-second animation at phase zero")
+check(has_pixel(2, 0, 0xC8F4DD), "each page starts its four-second animation at phase zero")
 
 print("PASS: NetatmoV2 Berry checks=" + str(checks))

@@ -280,8 +280,8 @@ class NetatmoArtwork
   end
 
   def day_total(value)
-    # Keep the normal one-decimal dashboard precision.  The day badge is
-    # drawn in the illustration, leaving the right row for value + mm.
+    # Keep the normal one-decimal dashboard precision.  The 24H period label
+    # uses the second metric line, leaving the first for value + mm.
     return self.compact_decimal(value)
   end
 
@@ -362,7 +362,7 @@ class NetatmoArtwork
     var pressure = self.metric(page, health, "Pressure", nil)
     var noise = self.metric(page, health, "Noise", nil)
     if co2 != nil
-      self.text_metric(6, "CO2 " + self.int_number(co2), self.co2_color(page, co2, primary))
+      self.text_metric(pressure == nil && noise == nil ? 10 : 6, self.int_number(co2) + " ppm", self.co2_color(page, co2, primary))
       if pressure != nil && noise != nil
         var alternate = int(self.phase(elapsed_ms) / 1200) % 2 == 0
         self.text_metric(14, alternate ? self.int_number(pressure) + "hPa" : self.int_number(noise) + "dB", self.stale(health) ? self.amber : self.teal)
@@ -370,14 +370,6 @@ class NetatmoArtwork
         self.text_metric(14, self.int_number(pressure) + "hPa", self.stale(health) ? self.amber : self.teal)
       elif noise != nil
         self.text_metric(14, self.int_number(noise) + "dB", self.stale(health) ? self.amber : self.teal)
-      else
-        # Additional indoor modules normally have CO2 without pressure/noise.
-        # Show its unit and a relative CO2 indicator, not a missing-data alert.
-        self.text_metric(14, "ppm", self.stale(health) ? self.amber : self.steel_hi)
-        var level = int(clamp((co2 - 400) * 5 / 1600, 0, 5))
-        for bar : 0 .. 4
-          self.rf(35 + bar * 3, 13 - bar, 2, bar + 1, bar < level ? self.co2_color(page, co2, primary) : 0x294650)
-        end
       end
     elif pressure != nil && noise != nil
       # Without CO2, pressure and noise get their own stable readable rows;
@@ -405,10 +397,16 @@ class NetatmoArtwork
     var high_display = high == nil ? nil : self.safe_temp(high, celsius)
     var lo_number = low_display == nil ? "--" : self.compact_decimal(low_display)
     var hi_number = high_display == nil ? "--" : self.compact_decimal(high_display)
-    var lo = "LO" + lo_number + unit
-    var hi = "HI" + hi_number + unit
-    self.text_metric(6, lo, self.stale(health) ? self.amber : self.warm)
-    self.text_metric(14, hi, self.stale(health) ? self.amber : self.teal_hi)
+    var lo_color = self.stale(health) ? self.amber : self.warm
+    var hi_color = self.stale(health) ? self.amber : self.teal_hi
+    # Down/up arrows distinguish today's minimum/maximum without making a
+    # negative value look like a mysterious "LO-" status message.
+    self.ln(21, 1, 21, 5, lo_color)
+    self.ln(20, 4, 21, 5, lo_color) self.ln(22, 4, 21, 5, lo_color)
+    self.ln(21, 9, 21, 13, hi_color)
+    self.ln(20, 10, 21, 9, hi_color) self.ln(22, 10, 21, 9, hi_color)
+    text(24, 6, lo_number + unit, lo_color)
+    text(24, 14, hi_number + unit, hi_color)
   end
 
   def draw_rain(page, health, day)
@@ -418,21 +416,11 @@ class NetatmoArtwork
     var color = self.stale(health) ? self.amber : self.teal_hi
     if day
       self.text_metric(6, total == nil ? "24H--" : self.day_total(total) + "mm", color)
-      self.text_metric(14, latest == nil ? (hour == nil ? "RAIN--" : "1H" + self.compact_decimal(hour) + "mm") : "R" + self.compact_decimal(latest) + "mm", self.stale(health) ? self.amber : self.teal)
+      self.text_metric(14, "24H", self.stale(health) ? self.amber : self.teal)
     else
       self.text_metric(6, latest == nil ? "RAIN--" : "R" + self.compact_decimal(latest) + "mm", color)
       self.text_metric(14, hour == nil ? (total == nil ? "1H--" : "24" + self.day_total(total) + "mm") : "1H" + self.compact_decimal(hour) + "mm", self.stale(health) ? self.amber : self.teal)
     end
-  end
-
-  def rain_day_badge()
-    # A compact 24H badge keeps the unit/context clear without stealing the
-    # metric lane's width from a normal decimal total such as 12.5mm.
-    # Keep the badge left of the battery overlay at x=14..17.
-    if !self.show_caption self.rf(1, 0, 13, 6, 0x000000) end
-    self.micro("2", 2, 1, self.amber)
-    self.micro("4", 6, 1, self.amber)
-    self.micro("H", 10, 1, self.amber)
   end
 
   def draw_wind(page, health, direction)
@@ -444,9 +432,9 @@ class NetatmoArtwork
     var color = self.stale(health) ? self.amber : self.teal_hi
     if direction
       if angle != nil
-        self.text_metric(6, "D" + self.direction_degrees(angle) + "DEG", color)
+        self.text_metric(6, self.direction_degrees(angle) + "°", color)
       elif gust_angle != nil
-        self.text_metric(6, "G" + self.direction_degrees(gust_angle) + "DEG", color)
+        self.text_metric(6, "G" + self.direction_degrees(gust_angle) + "°", color)
       else
         self.text_metric(6, "DIR--", color)
       end
@@ -481,75 +469,85 @@ class NetatmoArtwork
       self.rf(12, top + 1, 2, base - top - 2, 0x8EA5A5)
       self.rf(10, base - 2, 4, 1, pulse == 0 ? self.teal : 0x3F7777)
       self.rf(8, base, 8, 1, 0x364947)
-    elif kind == "extra"
-      # Broad upholstered seat and a separate sensor: the Couch module.
-      self.rf(3, base - 6, 11, 4, 0xA96C49)
-      self.rf(3, base - 6, 11, 1, 0xD29B65)
-      self.rf(1, base - 4, 3, 4, 0x76513F)
-      self.rf(13, base - 4, 3, 4, 0x76513F)
-      self.rf(4, base - 2, 9, 2, 0xBD8254)
-      self.rf(7, base - 5, 1, 3, pulse == 0 ? 0xC48653 : 0xA96C49)
-      self.rf(3, base, 2, 1, 0x4A4541) self.rf(12, base, 2, 1, 0x4A4541)
-      self.rf(14, top, 3, 4, 0x9CB1AE)
-      self.rf(14, top, 1, 4, 0xD4DFD9)
-      self.px(15, top + 2, pulse == 0 ? self.teal : 0x3F7777)
     else
-      # Warm window beside the shaded cylindrical indoor Netatmo station.
-      self.rf(1, top, 6, 6, 0x926D48)
-      self.rf(2, top + 1, 4, 4, 0xFFD68A)
-      self.rf(4, top + 1, 1, 4, 0xAE834F)
-      self.rf(2, top + 3, 4, 1, 0xAE834F)
-      self.rf(10, top + 1, 6, base - top - 1, 0x6B8388)
-      self.rf(11, top, 4, 1, 0xD4DFD9)
-      self.rf(11, top + 1, 2, base - top - 2, 0xB6C9C5)
-      self.rf(13, top + 1, 2, base - top - 2, 0x8EA5A5)
-      self.rf(11, base - 2, 4, 1, pulse == 0 ? self.teal : 0x3F7777)
-      self.rf(9, base, 8, 1, 0x364947)
+      # A full house silhouette identifies all indoor modules. Room captions
+      # can distinguish several indoor locations without changing the symbol.
+      var roof_h = self.show_caption ? 4 : 7
+      self.rf(4, 1, 2, roof_h, 0x84776A)
+      self.rf(3, roof_h, 12, base - roof_h + 1, 0xB9B09C)
+      self.rf(12, roof_h, 3, base - roof_h + 1, 0x92897C)
+      for row : 0 .. roof_h - 1
+        var half = int(row * 7 / (roof_h - 1))
+        self.rf(9 - half, row, half * 2 + 1, 1, row < 2 ? 0xD18C64 : 0xA95F4E)
+      end
+      self.rf(1, roof_h - 1, 17, 1, 0xD18C64)
+      var wy = roof_h + 1
+      var wh = self.show_caption ? 2 : 3
+      self.rf(5, wy, 3, wh, pulse == 0 ? 0xFFE2A1 : 0xEFC981)
+      self.rf(12, wy, 2, wh, 0xE7B76D)
+      self.rf(9, base - 3, 2, 4, 0x494640)
+      self.px(10, base - 1, 0xDAB67A)
+      self.rf(3, base, 12, 1, 0x625C52)
     end
   end
 
   def rain_scene(elapsed_ms, active)
     var base = self.show_caption ? 9 : 15
-    # An open gauge bowl and falling drops only when rain was measured.
-    self.rf(2, base - 5, 13, 1, 0xB6C9C5)
-    self.rf(1, base - 4, 15, 2, 0x738D94)
-    self.rf(3, base - 4, 11, 1, 0x000000)
-    self.rf(3, base - 2, 11, 2, 0x4C656E)
-    self.rf(5, base, 7, 1, 0x2D434B)
-    self.px(3, base - 3, 0xB7D7D1)
+    var top = self.show_caption ? 1 : 4
+    var canopy_h = self.show_caption ? 4 : 6
+    # Drops are painted behind the canopy, so the umbrella catches them.
     if active
-      var tick = int(self.phase(elapsed_ms) / 180)
-      var span = max(3, base - 5)
-      for drop : 0 .. 2
-        var x = 4 + drop * 5
-        var y = (tick + drop * 3) % span
+      var tick = int(self.phase(elapsed_ms) / 90)
+      for drop : 0 .. 3
+        var x = 2 + drop * 4
+        var y = (tick + drop * 2) % (top + 3)
         self.px(x, y, self.teal_hi)
         self.px(x, y + 1, self.teal)
       end
     end
+    self.rf(9, top + canopy_h - 1, 1, base - top - canopy_h + 1, 0xB6C9C5)
+    self.px(9, base - 1, 0xB6C9C5)
+    self.ln(7, base, 8, base, 0xD4DFD9)
+    self.px(6, base - 1, 0xB6C9C5)
+    for row : 0 .. canopy_h - 1
+      var half = row == 0 ? 2 : (row == 1 ? 5 : (row == 2 ? 7 : 8))
+      self.rf(9 - half, top + row, half * 2 + 1, 1, row < 2 ? 0xFFD482 : 0xDA9849)
+      if row >= 2 self.rf(7, top + row, 4, 1, 0xF4C66A) end
+    end
+    self.rf(2, top + canopy_h - 1, 2, 1, 0x000000)
+    self.px(7, top + canopy_h - 1, 0x000000)
+    self.rf(13, top + canopy_h - 1, 2, 1, 0x000000)
+    self.px(9, top + canopy_h, 0xD4DFD9)
   end
 
-  def wind_scene(elapsed_ms, active, angle)
+  def wind_scene(elapsed_ms, active, speed)
     var base = self.show_caption ? 9 : 15
-    var cy = self.show_caption ? 3 : 5
-    self.rf(8, cy, 2, base - cy, 0x8EA5A5)
+    var cy = self.show_caption ? 4 : 6
+    var radius = self.show_caption ? 4 : 6
+    var cx = 9
+    self.rf(8, cy, 2, base - cy, 0x91A7AB)
     self.rf(8, cy, 1, base - cy, 0xD4DFD9)
-    self.rf(5, base, 8, 1, 0x3F5857)
-    var turn = active ? int(self.phase(elapsed_ms) / 200) % 4 : 0
-    if turn == 0 || turn == 2
-      self.ln(3, cy, 14, cy, self.steel_hi)
-      self.rf(1, cy - 1, 4, 2, turn == 0 ? self.amber : self.teal)
-      self.rf(13, cy, 4, 2, turn == 0 ? self.teal : self.amber)
-      self.ln(8, cy, 10, cy + 3, self.steel_hi)
-      self.rf(9, cy + 2, 4, 2, self.teal_hi)
-    else
-      self.ln(4, cy - 2, 13, cy + 3, self.steel_hi)
-      self.rf(2, cy - 3, 4, 2, turn == 1 ? self.amber : self.teal)
-      self.rf(12, cy + 2, 4, 2, turn == 1 ? self.teal : self.amber)
-      self.ln(8, cy, 13, cy - 2, self.steel_hi)
-      self.rf(12, cy - 3, 4, 2, self.teal_hi)
+    self.rf(5, base, 8, 1, 0x607575)
+    # Three tapered blades rotate continuously with elapsed time. The number
+    # of complete turns per four-second loop reacts to measured wind; this is
+    # an illustration, not a measurement of a physical turbine's RPM.
+    var turns = self.is_numeric(speed) ? int(clamp(speed, 0, 40) / 8) + 1 : 1
+    var theta = active ? self.phase(elapsed_ms) * 6.2831853 * turns / 4000.0 : 0.0
+    for blade : 0 .. 2
+      var angle = theta - 1.5707963 + blade * 2.0943951
+      var ux = math.cos(angle)
+      var uy = math.sin(angle)
+      for step : 1 .. radius
+        var x = int(cx + ux * step + 0.5)
+        var y = int(cy + uy * step + 0.5)
+        self.px(x, y, 0xE5ECE3)
+        if step < radius - 1
+          self.px(int(cx + ux * step - uy * 0.7 + 0.5), int(cy + uy * step + ux * 0.7 + 0.5), 0xA0B9BA)
+        end
+      end
     end
-    self.px(8, cy, self.warm)
+    self.rf(cx - 1, cy - 1, 3, 3, 0x8DAAA9)
+    self.px(cx, cy, 0xFFF1BC)
   end
 
   def offline_scene(elapsed_ms)
@@ -584,7 +582,10 @@ class NetatmoArtwork
     if kind == "rain"
       self.rain_scene(elapsed_ms, active)
     elif kind == "wind"
-      self.wind_scene(elapsed_ms, active, self.expired(self.current_health) ? nil : self.value(page, "WindAngle"))
+      var speed = self.value(page, "WindStrength")
+      var gust = self.value(page, "GustStrength")
+      if speed == nil || speed <= 0 speed = gust end
+      self.wind_scene(elapsed_ms, active, speed)
     elif kind == "outdoor"
       self.room_scene(elapsed_ms, kind, view, active)
     else
@@ -610,7 +611,6 @@ class NetatmoArtwork
       self.text_metric(14, "OFFLINE", self.red)
     else
       self.draw_page_scene(page, elapsed_ms, kind, view)
-      if kind == "rain" && view == "rain_day" self.rain_day_badge() end
       self.name_caption(page, caption_color)
       var unit = "°C"
       if isinstance(page, map) && page.find("celsius", true) == false unit = "°F" end

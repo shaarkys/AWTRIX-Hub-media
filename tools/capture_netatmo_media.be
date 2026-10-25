@@ -30,7 +30,7 @@ var scene_names = {"indoor/climate":"indoor-climate", "indoor/air":"indoor-air",
 var app = new_app({"seconds":4})
 deliver(app, netatmo_media_sample(), 200)
 app.on_show()
-assert(size(app.frozen_pages) == 10, "media fixture must produce ten real module pages")
+assert(size(app.frozen_pages) == 8, "default media fixture must produce eight real module pages")
 var showcase = []
 for index : 0 .. size(app.frozen_pages) - 1
   var page = app.frozen_pages[index]
@@ -45,6 +45,24 @@ for index : 0 .. size(app.frozen_pages) - 1
   save_netatmo_frames(name, frames)
 end
 save_netatmo_frames("netatmov2-showcase", showcase)
+
+# Capture optional detail pages separately from the default rotation.
+app = new_app({"seconds":4, "show_minmax":true, "show_direction":true})
+deliver(app, netatmo_media_sample(), 200)
+app.on_show()
+assert(size(app.frozen_pages) == 10, "optional details add two pages")
+for index : 0 .. size(app.frozen_pages) - 1
+  var page = app.frozen_pages[index]
+  if page.find("view") == "range" || page.find("view") == "wind_dir"
+    var frames = []
+    for frame : 0 .. 39
+      clock_ms = index * 4000 + frame * 100
+      app.draw()
+      frames.push(drawing)
+    end
+    save_netatmo_frames(scene_names[page.find("kind") + "/" + page.find("view")], frames)
+  end
+end
 
 # Optional labels identify multiple rooms without changing the default look.
 app = new_app({"seconds":4, "show_names":true})
@@ -97,4 +115,4 @@ for state : ["no-modules", "signin"]
   end
   save_netatmo_frames(state, frames)
 end
-print("Captured ten NetatmoV2 module pages, an optional room label, four diagnostic states and a 40-second synthetic rotation")
+print("Captured eight default NetatmoV2 pages, two optional details, a room label, four diagnostic states and a 32-second synthetic rotation")

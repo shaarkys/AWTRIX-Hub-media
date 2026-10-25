@@ -38,14 +38,18 @@ The API's stable module types determine the view; names never control matching. 
 | Switch | API type | Pages, if values exist |
 | --- | --- | --- |
 | Indoor | `NAMain` | Temperature/humidity; air quality with CO2, pressure and noise |
-| Outdoor | `NAModule1` | Temperature/humidity; reported daily min/max |
+| Outdoor | `NAModule1` | Temperature/humidity; optional reported daily min/max |
 | Additional indoor / Couch | `NAModule4` | Temperature/humidity; available air-quality values |
 | Rain sensor | `NAModule3` | Latest rain and 1-hour total; 24-hour total |
-| Anemometer | `NAModule2` | Wind/gust speed; direction and reported daily maximum |
+| Anemometer | `NAModule2` | Wind/gust speed; optional direction and reported daily maximum |
 
 All five switches default on. Disable the modules you do not want displayed. These switches filter real discovered modules; they do not create readings or substitute manual values for absent hardware. There is no icon setting.
 
-Missing individual measurements are omitted; zero rain and zero wind remain valid readings. At most two pages are built for each module. Main-module air quality keeps CO2 on the upper line and alternates pressure/noise on the lower line when both are present. If no CO2 exists, the available pressure/noise measurements use the two lines. A known module without usable data gets a clear offline page.
+**Show wind direction** and **Show daily min/max** both default to **Off**. The normal wind page shows wind speed and gust; enable wind direction for a second page such as `225°` plus the reported daily maximum speed. Daily min/max adds an outdoor page with down/up arrows and temperature units. The old `LO` label meant today's minimum temperature, not an alert; it is no longer used.
+
+Indoor and additional indoor readings use a shaded house. Rain uses an umbrella with falling drops when the latest reported rain amount is positive; the daily-total page labels its period `24H`. Wind uses a three-blade rotating turbine, which stops for calm or unavailable current wind. Its animation responds to the measured speed but does not represent physical turbine RPM. Room-name mode uses compact versions of these graphics.
+
+Missing individual measurements are omitted; zero rain and zero wind remain valid readings. At most two pages are built for each module. CO2 reads simply `987 ppm`, without a CO2 prefix, and keeps its configured warning colors. Main-module air quality keeps this on the upper line and alternates pressure/noise on the lower line when both are present; a CO2-only page centers the single reading. If no CO2 exists, the available pressure/noise measurements use the two lines. A known module without usable data gets a clear offline page.
 
 Rain is shown in **mm**, with latest/1H/24H periods identified. The latest API rain value is not relabelled as a fabricated mm/hour rate. Wind speed is **km/h**. Temperature follows the clock's Celsius/Fahrenheit setting. No weather forecast is inferred from an outdoor temperature measurement.
 
