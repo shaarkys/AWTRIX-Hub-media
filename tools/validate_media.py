@@ -182,7 +182,7 @@ def check_zip() -> int:
 def main() -> None:
     solar_checked = check_images("SolarApp", 11, 11, 20000)
     pellet_checked = check_images("PelletStove", 16, 12, 30000)
-    event_checked = check_images("EventTrigger", 14, 14, 28000)
+    event_checked = check_images("EventTrigger", 22, 22, 44000)
     netatmo_checked = check_images("NetatmoV2", 15, 15, 32000)
     check_manifest_sources()
     package_files = check_zip()

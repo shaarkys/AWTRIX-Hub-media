@@ -112,7 +112,7 @@ def check(condition, message)
 end
 def has_label(label)
   for call : text_calls
-    if call[2] == label return true end
+    if call[3] == label return true end
   end
   return false
 end
@@ -184,8 +184,8 @@ check(app.duration() == 8000, "doorbell keeps the normal dwell despite priority 
 app.on_hide()
 
 # All canonical routes and a bare event-name pulse are accepted in auto mode.
-var names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
-for scene : 0 .. 6
+var names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage", "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"]
+for scene : 0 .. size(names) - 1
   app = show_event(new_app({"cooldown_seconds":0}), names[scene], "true")
   check(app.current_scene == scene, "topic suffix routes " + names[scene])
   app.on_hide()
@@ -206,6 +206,34 @@ app.on_hide()
 app = new_app({"cooldown_seconds":0})
 app.receive("homey/events/heat", '{"event":"not-a-scene","active":true}')
 check(!app.should_show(), "invalid explicit event cannot fall through to topic")
+
+# Appliance completions work through either JSON routing or a fixed scene on an
+# existing appliance topic; they retain ordinary dwell and lower alarm priority.
+for scene : 7 .. 10
+  app = new_app({"cooldown_seconds":0})
+  app.receive("homey/events", '{"event":"' + names[scene] + '","active":true}')
+  app.on_show()
+  check(app.current_scene == scene && app.duration() == 8000, "JSON completion uses normal dwell: " + names[scene])
+  app.receive("homey/events", '{"event":"' + names[scene] + '","active":false}')
+  check(app.current_scene == -1 && next_calls == 1, "inactive clears visible appliance scene: " + names[scene])
+  app = new_app({"event_mode":names[scene], "match_mode":"exact", "active_value":"finished", "inactive_value":"running", "trigger_mode":"edge", "cooldown_seconds":0})
+  app.receive("existing/appliance/state", "finished")
+  app.on_show() app.on_hide()
+  app.receive("existing/appliance/state", "finished")
+  check(!app.should_show(), "repeated finished state does not replay: " + names[scene])
+  app.receive("existing/appliance/state", "running")
+  app.receive("existing/appliance/state", "finished")
+  check(app.pending[scene] != nil, "next completion rearms after running: " + names[scene])
+end
+
+app = new_app({"cooldown_seconds":0})
+app.receive("homey/events/dryer_finished", "true")
+app.receive("homey/events/heat", "true")
+app.on_show()
+check(app.current_scene == 3 && app.pending[10] != nil, "alarm outranks queued appliance completion")
+app.on_hide() app.loop() app.on_show()
+check(app.current_scene == 10, "dryer completion survives queued alarm selection")
+app.on_hide()
 
 # Boolean variants, malformed input, explicit false and unknown inactive values.
 app = new_app({"cooldown_seconds":0})
@@ -335,13 +363,20 @@ check(app.current_scene == 3, "queued event waits for the current turn to finish
 app.on_hide()
 
 app = new_app({"cooldown_seconds":0, "queue_seconds":5})
-for scene : 0 .. 6 app.receive("test/events/" + names[scene], "true") end
-check(app.sequence == 7, "queue has at most one bounded entry per scene")
+for scene : 0 .. size(names) - 1 app.receive("test/events/" + names[scene], "true") end
+check(app.sequence == size(names), "queue has at most one bounded entry per scene")
 app.receive("test/events/motion", "true")
-check(app.sequence == 7 && app.pending[0] != nil, "coalesced scene refreshes without adding a second slot")
+check(app.sequence == size(names) && app.pending[0] != nil, "coalesced scene refreshes without adding a second slot")
+app.receive("test/events/dryer_finished", "false")
+check(app.pending[10] == nil && app.pending[7] != nil, "last scene clear preserves another appliance event")
 clock_ms = 5000
 app.loop()
 check(!app.should_show(), "pending entries expire at the finite queue lifetime")
+
+app = new_app({"cooldown_seconds":0})
+for scene : 0 .. size(names) - 1 app.receive("test/events/" + names[scene], "true") end
+app.on_show() app.on_button("select") app.on_hide()
+check(!app.should_show() && app.pending[10] == nil, "acknowledgement clears all eleven pending event slots")
 
 # Clock arithmetic remains wrap-safe for short event lifetimes.
 app = new_app({"cooldown_seconds":0})
@@ -365,10 +400,14 @@ app.draw()
 check(has_art(), "all generated event scenes draw through EventArtwork")
 
 # Labels are optional but must still use the same bounded generated drawing path.
-for scene : 0 .. 6
+var completion_labels = ["DISH", "COOK", "WASH", "DRY"]
+for scene : 0 .. size(names) - 1
   app = show_event(new_app({"show_labels":true, "cooldown_seconds":0}), names[scene], "true")
   app.draw()
   check(size(text_calls) == 2 && has_art(), "labels and art stay bounded for " + names[scene])
+  if scene >= 7
+    check(has_label(completion_labels[scene - 7]) && has_label("DONE"), "completion uses its appliance artwork, not idle fallback: " + names[scene])
+  end
   app.on_hide()
 end
 

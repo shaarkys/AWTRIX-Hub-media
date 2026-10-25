@@ -3,7 +3,7 @@
 # @version 1.0.0
 # @display 52x16
 # @config topic text "MQTT topic filter" default="homey/events/+" group="MQTT"
-# @config event_mode select "Event mode" default=auto options=auto,motion,mail_received,mail_collected,heat,water,doorbell,garage group="Matching"
+# @config event_mode select "Event mode" default=auto options=auto,motion,mail_received,mail_collected,heat,water,doorbell,garage,dishwasher_finished,cooker_finished,washing_machine_finished,dryer_finished group="Matching"
 # @config trigger_mode select "Trigger mode" default=pulse options=pulse,edge group="Matching"
 # @config payload_field text "Activity JSON field" default="" group="Matching" help="Empty uses value or active."
 # @config match_mode select "Value matching" default=boolean options=boolean,exact,any group="Matching"
@@ -357,6 +357,219 @@ class EventArtwork
     end
   end
 
+  # Appliance scenes use the same shaded sprites and dark room depth as the
+  # outdoor scenes. Each four-second loop reveals the finished contents, then
+  # holds them still; only highlights continue during that resting beat.
+  def room(kitchen)
+    self.sky()
+    var w = self.canvas_width
+    self.rf(0, 5, w, 8, kitchen ? 0x182A32 : 0x142B36)
+    self.rf(0, 13, w, 3, 0x263C40)
+    self.rf(0, 15, w, 1, 0x102027)
+    if w == 52
+      self.rf(0, 5, w, 1, 0x243D43)
+      for tile : 0 .. 6 self.rf(tile * 8 + 2, 6, 1, 6, 0x1E333B) end
+      if kitchen
+        self.rf(1, 2, 7, 10, 0x51463F)
+        self.rf(2, 3, 5, 8, 0x806B55)
+        self.rf(3, 4, 3, 6, 0x6B5849)
+        self.px(6, 7, 0xD8BA84)
+      else
+        self.rf(34, 2, 16, 1, 0x6C7167)
+        self.rf(35, 1, 1, 3, 0xBDBA9E)
+        self.rf(48, 1, 1, 3, 0xBDBA9E)
+      end
+    end
+  end
+
+  def dish_plate(x, y)
+    self.stamp([".LL.", "LWWL", "LwwL", "LwwL", "LWWL", ".LL."], x, y)
+  end
+
+  def dishwasher_finished(t)
+    self.room(true)
+    var wide = self.canvas_width == 52
+    var x = wide ? 12 : 2
+    # A stone worktop, pale front and receding teal side form one cabinet.
+    self.stamp(["LLLLLLLLLLLLLLLLLLLLL", "HWWWWWWWWWWWWWWWWWHbb",
+      "HLLLkkkkkkkkkkLLLHHbb", "HLkkkkkkkkkkkkkkkHHbb",
+      "HLkkkkkkkkkkkkkkkHHbb", "HLkkkkkkkkkkkkkkkHHbb",
+      "HLkkkkkkkkkkkkkkkHHbb", "HLkkkkkkkkkkkkkkkHHbb",
+      "HLkkkkkkkkkkkkkkkHHbb", "HLkkkkkkkkkkkkkkkHHbb",
+      "HLkkkkkkkkkkkkkkkHHbb", "HHHHHHHHHHHHHHHHHHHbb",
+      ".kkkkkkkkkkkkkkkkkk.."], x, 2)
+    self.px(x + 15, 4, t < 600 ? 0xE3973D : 0x7BD4B6)
+    var rack_y = self.ease(t, 500, 1700, 6, 7)
+    for plate : 0 .. 2 self.dish_plate(x + 3 + plate * 5, rack_y) end
+    self.rf(x + 2, rack_y + 5, 15, 1, 0x74A6A8)
+    for wire : 0 .. 4 self.px(x + 3 + wire * 3, rack_y + 6, 0xB5C5BB) end
+    # The front folds down to a shallow tray, revealing the rack progressively.
+    var top = self.ease(t, 200, 1500, 5, 13)
+    self.rf(x + 1, top, 17, 14 - top, 0x7A9294)
+    self.rf(x + 1, top, 17, 1, 0xD3DDD1)
+    self.rf(x + 3, top + 1, 13, 1, 0x465C64)
+    if t >= 1700
+      self.sparkle(x + 4, 7, int(t / 300) % 3 == 0)
+      self.sparkle(x + 13, 9, int(t / 300) % 3 == 1)
+    end
+    if wide
+      # Sink and clean plate stack complete the miniature kitchen.
+      self.rf(35, 11, 15, 2, 0x8B806B)
+      self.rf(35, 11, 15, 1, 0xD1B58A)
+      self.rf(38, 11, 7, 1, 0x34515A)
+      self.ln(41, 10, 41, 6, 0x9AAEAD)
+      self.ln(41, 6, 44, 6, 0xC4D2C8)
+      self.px(44, 7, 0x9AAEAD)
+      self.rf(36, 14, 13, 1, 0x6F604D)
+      self.rf(36, 13, 1, 2, 0x9F8866)
+      self.rf(48, 13, 1, 2, 0x9F8866)
+      self.stamp([".WWWWW.", "LwwwwwL", ".LLLLL."], 44, 8)
+    end
+  end
+
+  def fryer_body(x, y)
+    self.stamp(["....HHHHHHHH......", "..HHLLLLLLLLHH....",
+      ".HLLLLLLLLLLLLHb..", "HLLLkkkkkkkkLLHbb.",
+      "HLLkTTkTTkkkLLHbb.", "HLLLkkkkkkkkLLHbb.",
+      "HLLkkkkkkkkkLLHbb.", "HLLkkkkkkkkkLLHbb.",
+      "HLLkkkkkkkkkLLHbb.", "HLLkkkkkkkkkLLHbb.",
+      "HLLkkkkkkkkkLLHbb.", ".HHHHHHHHHHHHHHbb.",
+      "..kk........kk...."], x, y)
+  end
+
+  def food_basket(x, y)
+    self.stamp(["..OOOOOOOOOO...", ".OYYYYYYYYYYO..",
+      "OYYyYoyYoyYYYOO", "OWWWWWWWWWWWWO.",
+      ".OAAAAAAAAAAOb.", ".OAAAkkkkAAAOb.",
+      "..OOOkkkkOOOb.."], x, y)
+    self.rf(x + 6, y + 4, 4, 1, 0x7B9294)
+  end
+
+  def cooker_finished(t)
+    self.room(true)
+    var wide = self.canvas_width == 52
+    var x = wide ? 12 : 1
+    self.rf(0, 14, self.canvas_width, 1, 0xB19168)
+    self.rf(0, 15, self.canvas_width, 1, 0x57453B)
+    self.fryer_body(x, 1)
+    self.px(x + 10, 5, t < 500 ? 0xE3973D : 0x7BD4B6)
+    # The drawer eases out once, then the food rests in its open basket.
+    var slide = self.ease(t, 200, 1700, 0, wide ? 8 : 5)
+    var bx = x + 1 + slide
+    self.food_basket(bx, 7)
+    if t > 900 && t < 2600
+      var rise = int((t - 900) / 220)
+      var sy = 6 - (rise % 4)
+      var ink = t < 1800 ? 0xD6C6A4 : 0x7B887E
+      self.px(bx + 4, sy, ink)
+      self.px(bx + 5, sy - 1, ink)
+      if t < 2000 self.px(bx + 9, sy - 1, ink) end
+    end
+    if t >= 2000 self.sparkle(bx + 10, 7, int(t / 300) % 3 == 0) end
+    if wide
+      # A plate, napkin and fork give the food a serving context.
+      self.stamp(["..LLLLLLLL..", ".LWWWWWWWWL.", "LWWYYYYYYWWL",
+        ".LWWWWWWWWL.", "..LLLLLLLL.."], 38, 9)
+      self.rf(36, 10, 1, 4, 0xB7C6BE)
+      self.rf(35, 9, 1, 2, 0xB7C6BE)
+      self.rf(37, 9, 1, 2, 0xB7C6BE)
+      self.rf(45, 5, 4, 2, 0x47999B)
+      self.rf(46, 4, 2, 1, 0x7DBDB7)
+    end
+  end
+
+  def laundry_body(x, warm)
+    self.stamp([".HHHHHHHHHHHHHHHH...", "HLLLLLLLLLLLLLLLHHbb",
+      "HLHHHHHHHHHHHHHLHHbb", "HLLkkkkkkkkkLLHLHHbb",
+      "HLLLkkkkkkkLLLHLHHbb", "HLLkkAAAAAkkLLHLHHbb",
+      "HLkAAkkkkkAAkLHLHHbb", "HLkAkkkkkkkAkLHLHHbb",
+      "HLkAkkkkkkkAkLHLHHbb", "HLkAkkkkkkkAkLHLHHbb",
+      "HLkAAkkkkkAAkLHLHHbb", "HLLkkAAAAAkkLLHLHHbb",
+      "HLLLLLLLLLLLLLLLHHbb", ".HHHHHHHHHHHHHHHHbbb",
+      "..kk.........kk....."], x, 1)
+    self.rf(x + 3, 3, 3, 1, warm ? 0xD5A364 : 0x47999B)
+    self.rf(x + 10, 3, 2, 1, 0x728D8C)
+    self.px(x + 14, 3, 0x7BD4B6)
+    # The door opening remains round and the laundry is stationary inside.
+    self.stamp(warm ? [".YYYY..", "YWWYYy.", "YWWYYy.", ".YYYy.."] :
+      [".rrr...", "rRRrTT.", "rRRrTT.", ".rrTT.."], x + 5, 8)
+  end
+
+  def laundry_door(x, t, right)
+    var opening = self.ease(t, 200, 1300, 0, 3)
+    var dx = right ? 3 : -3
+    if opening == 0
+      self.stamp(["..HHHHH..", ".HLLLLLH.", "HLbCCCbbH", "HLCCcCbbH",
+        "HLCCcCbbH", "HLbCCbbbH", ".HLLLLLH.", "..HHHHH.."], x + 4, 5)
+    elif opening == 1
+      self.stamp([".HHHHH.", "HLLLLLH", "HLCCbbH", "HLCCbbH",
+        "HLCCbbH", "HLCCbbH", "HLLLLLH", ".HHHHH."], x + 4 + dx, 5)
+    else
+      self.stamp(opening == 2 ? [".HHH.", "HLLLH", "HLbbH", "HLbbH",
+        "HLbbH", "HLbbH", "HLLLH", ".HHH."] :
+        [".HH", "HLH", "HbH", "HbH", "HbH", "HbH", "HLH", ".HH"],
+        right ? x + 13 : x + 1, 5)
+    end
+  end
+
+  def laundry_basket(x, y)
+    self.stamp(["WW..TTT..WW", "WwWTtTTWwWW", ".OOOOOOOOO.",
+      ".OYYYYYYYO.", "..OYOYOYO..", "..OOOOOOO.."], x, y)
+  end
+
+  def washing_machine_finished(t)
+    self.room(false)
+    var wide = self.canvas_width == 52
+    var x = wide ? 10 : 2
+    self.laundry_body(x, false)
+    self.laundry_door(x, t, false)
+    if wide
+      self.laundry_basket(37, 10)
+      self.stamp([".WWWWW.", "WWWWWWW", "W.WWW.W", "..WWW..", "..WWW.."], 37, 3)
+      if t >= 1500 && t < 2900
+        var sx = self.ease(t, 1500, 2900, x + 6, 40)
+        var sy = t < 2150 ? self.ease(t, 1500, 2150, 8, 5) : self.ease(t, 2150, 2900, 5, 10)
+        self.stamp([".rrr.", "rRRRr", "r.R.r", ".RRR.", ".rrr."], sx, sy)
+      elif t >= 2900
+        self.stamp([".rrr.", "rRRRr", ".RRR."], 40, 9)
+      end
+    end
+    if t >= 1800 self.sparkle(x + 10, 6, int(t / 350) % 3 == 0) end
+    self.px(x + 14, 3, t < 500 ? 0xE3973D : 0x7BD4B6)
+  end
+
+  def folded_towels(x, y)
+    self.stamp([".WWWWWWWW..", "WwwwwwwwwW.", ".YYYYYYYY..",
+      "..TTTTTTTT.", ".TtttttttT.", "..AAAAAAA.."], x, y)
+  end
+
+  def dryer_finished(t)
+    self.room(false)
+    var wide = self.canvas_width == 52
+    var x = wide ? 10 : 2
+    self.laundry_body(x, true)
+    self.laundry_door(x, t, true)
+    if wide
+      self.folded_towels(38, 9)
+      self.rf(35, 15, 16, 1, 0x8A7256)
+      if t >= 1400 && t < 2900
+        var tx = self.ease(t, 1400, 2900, x + 6, 39)
+        var ty = t < 2150 ? 7 : self.ease(t, 2150, 2900, 7, 8)
+        self.stamp(["WWWWWWW", "WwwwwwW", "WwwwwwW", ".YYYYY."], tx, ty)
+      elif t >= 2900
+        self.stamp([".WWWWWWWW.", "WwwwwwwwwW", ".YYYYYYYY."], 38, 7)
+      end
+    end
+    # Remaining warm air dissipates after opening; towels no longer tumble.
+    if t > 500 && t < 2100
+      var rise = int((t - 500) / 220) % 3
+      self.px(x + 9, 4 - rise, 0xD6BB88)
+      self.px(x + 10, 3 - rise, 0x8C876E)
+    end
+    if t >= 1800 self.sparkle(x + 7, 9, int(t / 350) % 3 == 1) end
+    self.px(x + 14, 3, t < 500 ? 0xE3973D : 0x7BD4B6)
+  end
+
   def quiet(t)
     self.sky()
     var x = int(self.canvas_width / 2)
@@ -367,9 +580,10 @@ class EventArtwork
   end
 
   def draw_labels(scene)
-    var upper = ["MOVE", "NEW", "MAIL", "HEAT", "WATER", "DING", "OPEN"]
-    var lower = ["FRONT", "MAIL", "PICKUP", "ALARM", "LEAK", "DONG", "GARAGE"]
-    var ink = [0x82C9B4, 0xF6D28A, 0x82C9B4, 0xFF9670, 0x7BDAE3, 0xF6D28A, 0x82C9B4]
+    var upper = ["MOVE", "NEW", "MAIL", "HEAT", "WATER", "DING", "OPEN", "DISH", "COOK", "WASH", "DRY"]
+    var lower = ["FRONT", "MAIL", "PICKUP", "ALARM", "LEAK", "DONG", "GARAGE", "DONE", "DONE", "DONE", "DONE"]
+    var ink = [0x82C9B4, 0xF6D28A, 0x82C9B4, 0xFF9670, 0x7BDAE3, 0xF6D28A, 0x82C9B4,
+      0x8BE6A5, 0xF6B06A, 0x7BDAE3, 0xF0BD70]
     text(28, 6, scene < 0 ? "IDLE" : upper[scene], scene < 0 ? 0x82C9B4 : ink[scene])
     text(28, 14, scene < 0 ? "READY" : lower[scene], 0xA6A6A6)
   end
@@ -393,9 +607,13 @@ class EventArtwork
     elif scene == 4 self.water(t)
     elif scene == 5 self.doorbell(t)
     elif scene == 6 self.garage(t)
+    elif scene == 7 self.dishwasher_finished(t)
+    elif scene == 8 self.cooker_finished(t)
+    elif scene == 9 self.washing_machine_finished(t)
+    elif scene == 10 self.dryer_finished(t)
     else self.quiet(t)
     end
-    if self.compact(labels) self.draw_labels(scene >= 0 && scene <= 6 ? scene : -1) end
+    if self.compact(labels) self.draw_labels(scene >= 0 && scene <= 10 ? scene : -1) end
   end
 end
 
@@ -412,7 +630,8 @@ class EventTrigger : EventArtwork
   var idle_started
 
   def init()
-    self.names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
+    self.names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage",
+      "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"]
     self.topic = store.get("topic", "homey/events/+")
     if type(self.topic) != "string" self.topic = "homey/events/+" end
     self.event_mode = string.tolower(str(store.get("event_mode", "auto")))
@@ -434,11 +653,18 @@ class EventTrigger : EventArtwork
     self.show_labels = store.get("show_labels", false) == true
     self.wake_display = store.get("wake_display", false) == true
 
-    self.pending = [nil, nil, nil, nil, nil, nil, nil]
-    self.edge_active = [false, false, false, false, false, false, false]
-    self.last_accepted = [nil, nil, nil, nil, nil, nil, nil]
-    self.failed = [false, false, false, false, false, false, false]
-    self.rejection_logged = [false, false, false, false, false, false, false]
+    self.pending = []
+    self.edge_active = []
+    self.last_accepted = []
+    self.failed = []
+    self.rejection_logged = []
+    for scene : 0 .. size(self.names) - 1
+      self.pending.push(nil)
+      self.edge_active.push(false)
+      self.last_accepted.push(nil)
+      self.failed.push(false)
+      self.rejection_logged.push(false)
+    end
     self.recent_ids = []
     self.sequence = 0
     self.current_scene = -1
@@ -700,7 +926,7 @@ class EventTrigger : EventArtwork
   end
 
   def expire()
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       var item = self.pending[scene]
       if item != nil && self.elapsed(item.find("stamp")) >= self.queue_ms
         self.pending[scene] = nil
@@ -723,7 +949,7 @@ class EventTrigger : EventArtwork
     var best = -1
     var best_priority = -1
     var best_order = 0
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       var item = self.pending[scene]
       if item != nil && !self.failed[scene]
         var item_priority = item.find("priority")
@@ -793,7 +1019,7 @@ class EventTrigger : EventArtwork
   end
 
   def clear_scene(scene)
-    if scene < 0 || scene > 6 return end
+    if scene < 0 || scene >= size(self.names) return end
     self.edge_active[scene] = false
     self.pending[scene] = nil
     if self.request_scene == scene
@@ -909,7 +1135,7 @@ class EventTrigger : EventArtwork
 
   def on_button(button)
     if button != "select" return false end
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       self.pending[scene] = nil
       self.failed[scene] = false
     end

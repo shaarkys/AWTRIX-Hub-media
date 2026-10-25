@@ -3,7 +3,7 @@
 # @version 1.0.0
 # @display 52x16
 # @config topic text "MQTT topic filter" default="homey/events/+" group="MQTT"
-# @config event_mode select "Event mode" default=auto options=auto,motion,mail_received,mail_collected,heat,water,doorbell,garage group="Matching"
+# @config event_mode select "Event mode" default=auto options=auto,motion,mail_received,mail_collected,heat,water,doorbell,garage,dishwasher_finished,cooker_finished,washing_machine_finished,dryer_finished group="Matching"
 # @config trigger_mode select "Trigger mode" default=pulse options=pulse,edge group="Matching"
 # @config payload_field text "Activity JSON field" default="" group="Matching" help="Empty uses value or active."
 # @config match_mode select "Value matching" default=boolean options=boolean,exact,any group="Matching"
@@ -32,7 +32,8 @@ class EventTrigger : EventArtwork
   var idle_started
 
   def init()
-    self.names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
+    self.names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage",
+      "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"]
     self.topic = store.get("topic", "homey/events/+")
     if type(self.topic) != "string" self.topic = "homey/events/+" end
     self.event_mode = string.tolower(str(store.get("event_mode", "auto")))
@@ -54,11 +55,18 @@ class EventTrigger : EventArtwork
     self.show_labels = store.get("show_labels", false) == true
     self.wake_display = store.get("wake_display", false) == true
 
-    self.pending = [nil, nil, nil, nil, nil, nil, nil]
-    self.edge_active = [false, false, false, false, false, false, false]
-    self.last_accepted = [nil, nil, nil, nil, nil, nil, nil]
-    self.failed = [false, false, false, false, false, false, false]
-    self.rejection_logged = [false, false, false, false, false, false, false]
+    self.pending = []
+    self.edge_active = []
+    self.last_accepted = []
+    self.failed = []
+    self.rejection_logged = []
+    for scene : 0 .. size(self.names) - 1
+      self.pending.push(nil)
+      self.edge_active.push(false)
+      self.last_accepted.push(nil)
+      self.failed.push(false)
+      self.rejection_logged.push(false)
+    end
     self.recent_ids = []
     self.sequence = 0
     self.current_scene = -1
@@ -320,7 +328,7 @@ class EventTrigger : EventArtwork
   end
 
   def expire()
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       var item = self.pending[scene]
       if item != nil && self.elapsed(item.find("stamp")) >= self.queue_ms
         self.pending[scene] = nil
@@ -343,7 +351,7 @@ class EventTrigger : EventArtwork
     var best = -1
     var best_priority = -1
     var best_order = 0
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       var item = self.pending[scene]
       if item != nil && !self.failed[scene]
         var item_priority = item.find("priority")
@@ -413,7 +421,7 @@ class EventTrigger : EventArtwork
   end
 
   def clear_scene(scene)
-    if scene < 0 || scene > 6 return end
+    if scene < 0 || scene >= size(self.names) return end
     self.edge_active[scene] = false
     self.pending[scene] = nil
     if self.request_scene == scene
@@ -529,7 +537,7 @@ class EventTrigger : EventArtwork
 
   def on_button(button)
     if button != "select" return false end
-    for scene : 0 .. 6
+    for scene : 0 .. size(self.names) - 1
       self.pending[scene] = nil
       self.failed[scene] = false
     end

@@ -13,7 +13,7 @@ Standalone display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels**, us
 
 **PelletStove** rotates through stove mode/status, current/target temperatures, pellets, cleaning, ash usage, and errors. It includes cooling-fan and microfiber-cloth animations, proportional 30 kg fuel levels, urgent cleaning/ash blinking, a standby page showing current room temperature, and the optional temperature-only standby turn. Valid false error readings clear old faults even in standby, OFF, or before fresh power/mode messages arrive.
 
-**Event trigger** displays animated scenes for motion, received/collected mail, heat, water leak, doorbell, and garage opening. Graphics are text-free and silent by default, with optional labels. It requests a turn on receiving a matching event and stays out of the rotation while idle. Use one auto-routing copy or configure separate copies for individual sensor topics.
+**Event trigger** displays animated scenes for motion, received/collected mail, heat, water leak, doorbell, garage opening, and dishwasher/cooker/washing-machine/dryer completion. Graphics are text-free and silent by default, with optional labels. It requests a turn on receiving a matching event and stays out of the rotation while idle. Use one auto-routing copy or configure separate copies for individual sensor topics.
 
 **NetatmoV2** discovers indoor, outdoor, additional indoor/Couch, rain and wind modules through Netatmo's cloud API. It shows at most two pages per module with built-in artwork, native OAuth sign-in, V1-friendly data aging, and useful empty/error states. Five module switches control visibility; no icons need configuring.
 

@@ -60,12 +60,13 @@ def check(condition, message)
 end
 
 var source_file = open("EventTrigger/event_graphics.be.inc", "r")
-var artwork = compile(source_file.read() + "\nreturn EventArtwork()")()
+var artwork_source = source_file.read()
+var artwork = compile(artwork_source + "\nreturn EventArtwork()")()
 source_file.close()
 
-var names = ["MOVE", "NEW", "MAIL", "HEAT", "WATER", "DING", "OPEN"]
-var lower = ["FRONT", "MAIL", "PICKUP", "ALARM", "LEAK", "DONG", "GARAGE"]
-for scene : -1 .. 6
+var names = ["MOVE", "NEW", "MAIL", "HEAT", "WATER", "DING", "OPEN", "DISH", "COOK", "WASH", "DRY"]
+var lower = ["FRONT", "MAIL", "PICKUP", "ALARM", "LEAK", "DONG", "GARAGE", "DONE", "DONE", "DONE", "DONE"]
+for scene : -1 .. 10
   artwork.paint(scene, 0, false)
   check(size(drawing) > 0, "scene has no drawing: " + str(scene))
   var first = json.dump(drawing)
@@ -73,14 +74,14 @@ for scene : -1 .. 6
   check(json.dump(drawing) != first, "scene does not animate from elapsed time: " + str(scene))
 end
 
-for scene : -1 .. 6
+for scene : -1 .. 10
   for tick : 0 .. 15
     artwork.paint(scene, tick * 250, false)
     check(size(drawing) > 0, "phase frame has no drawing: " + str(scene) + ":" + str(tick))
   end
 end
 
-for scene : 0 .. 6
+for scene : 0 .. 10
   for tick : 0 .. 15
     artwork.paint(scene, tick * 250, true)
     check(size(drawing) > 0, "compact phase frame has no drawing: " + str(scene) + ":" + str(tick))
@@ -90,11 +91,51 @@ end
 artwork.paint(0, -1, false)
 check(size(drawing) > 0, "negative elapsed time wraps to a valid phase")
 
-for scene : 0 .. 6
+for scene : 0 .. 10
   artwork.paint(scene, 1000, true)
   check(size(labels_seen) == 2, "labels should draw exactly two fixed rows")
   check(labels_seen[0] == names[scene], "unexpected upper label")
   check(labels_seen[1] == lower[scene], "unexpected lower label")
+end
+
+for scene : 7 .. 10
+  artwork.paint(scene, 1000, false)
+  var frame = json.dump(drawing)
+  artwork.paint(scene, 3500, false)
+  check(json.dump(drawing) != frame, "completion scene animation is static: " + str(scene))
+end
+
+# The completed contents settle after the opening/unloading action. Suppress
+# decorative glints so a moving rack, food or towel cannot pass as a rest pose.
+var settled = compile(artwork_source + "\nclass SettledArtwork : EventArtwork\n  def sparkle(x, y, bright) end\nend\nreturn SettledArtwork()")()
+for compact : [false, true]
+  for scene : 7 .. 10
+    settled.paint(scene, 3000, compact)
+    var rest_frame = json.dump(drawing)
+    settled.paint(scene, 3500, compact)
+    check(json.dump(drawing) == rest_frame, "finished contents must hold still: " + str(scene))
+    settled.paint(scene, 0, compact)
+    check(json.dump(drawing) != rest_frame, "completion needs an opening action before its rest pose: " + str(scene))
+  end
+end
+
+var completion_frames = []
+for scene : 7 .. 10
+  artwork.paint(scene, 1000, false)
+  completion_frames.push(json.dump(drawing))
+end
+for first : 0 .. 2
+  for second : first + 1 .. 3
+    check(completion_frames[first] != completion_frames[second],
+      "completion scenes are not visually distinct: " + str(first + 7) + "/" + str(second + 7))
+  end
+end
+
+for scene : 7 .. 10
+  artwork.paint(scene, 1000, true)
+  check(size(labels_seen) == 2, "completion labels should draw exactly two fixed rows")
+  check(labels_seen[0] == names[scene], "unexpected completion upper label")
+  check(labels_seen[1] == lower[scene], "unexpected completion lower label")
 end
 
 artwork.paint(1000, 0, ["MOVE", "EVENT"])
@@ -106,7 +147,7 @@ check(size(labels_seen) == 0, "empty label pair should keep full-width mode")
 # must not bleed into the two-pixel gutter or the label column.
 var peak_calls = 0
 for compact : [false, true]
-  for scene : 0 .. 6
+  for scene : 0 .. 10
     for tick : 0 .. 159
       artwork.paint(scene, tick * 25, compact)
       assert(artwork.clip_left == 0, "temporary mailbox mask leaked into another frame")
@@ -131,4 +172,4 @@ end
 check(peak_calls < 512, "sprite run batching regressed")
 print("Peak native draw calls per frame: " + str(peak_calls))
 
-print("PASS: EventArtwork bounds, seven scenes, quiet frame, elapsed animation and labels (" + str(checks) + " checks)")
+print("PASS: EventArtwork bounds, eleven scenes, quiet frame, completion artwork, elapsed animation and labels (" + str(checks) + " checks)")

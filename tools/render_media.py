@@ -287,7 +287,8 @@ def render_pellet() -> None:
 
 
 def render_event() -> None:
-    scenes = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
+    scenes = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage",
+              "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"]
     names = scenes + [scene + "-labels" for scene in scenes]
     output = ROOT / "EventTrigger"
     stills = render_app("EventTrigger", ROOT / "work/event-captures", output, names, set(names))

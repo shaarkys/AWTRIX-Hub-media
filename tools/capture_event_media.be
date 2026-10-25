@@ -6,10 +6,10 @@ def write_event_json(path, value)
   file.close()
 end
 
-var event_names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
+var event_names = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage", "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"]
 var event_showcase = []
 for labels : [false, true]
-  for scene : 0 .. 6
+  for scene : 0 .. size(event_names) - 1
     var app = new_app({"topic":"test/events/+", "show_labels":labels, "cooldown_seconds":0})
     app.receive("test/events/" + event_names[scene], "true")
     app.loop()
@@ -27,4 +27,4 @@ for labels : [false, true]
   end
 end
 write_event_json("event-captures/eventtrigger-showcase.json", event_showcase)
-print("Captured seven Event trigger examples, optional labels, and a staged 28-second showcase")
+print("Captured eleven Event trigger examples, optional labels, and a staged 44-second showcase")

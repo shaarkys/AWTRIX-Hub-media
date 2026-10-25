@@ -38,7 +38,7 @@
     },
     {
       "path": "tools/render_media.py",
-      "sha256": "1432e8aa6dc41f4a00fdb814500f666083c3902f66af5acf4e6126acf15cd52d"
+      "sha256": "d60fb714cdea90d453309160c7694b4ecad96b0d715c076e4614bdbbe956d6c0"
     },
     {
       "path": "source-notices/awtrix-small.bdf",
@@ -54,15 +54,15 @@
     },
     {
       "path": "EventTrigger/EventTrigger.ax",
-      "sha256": "eacb968ef85799c38027ea92edf53244c637489e064c58960274d01e200ae51f"
+      "sha256": "b31db922563d455d2f9c3924791ff5feb6739aa76f493f292bdbaffd1950a3f5"
     },
     {
       "path": "EventTrigger/event_core.be.inc",
-      "sha256": "232577e31044df7081564da8ea9194afd9752a5bfb807dc8febe3e79a9f366a8"
+      "sha256": "f631a161111f1694fa4f56f33b2c6fdb6eb3d474bc20210c80cd363231834197"
     },
     {
       "path": "EventTrigger/event_graphics.be.inc",
-      "sha256": "f96158f5b18b0c401442f8605a368877d5391293df74bc6ae7b6aec2bdfc2bd9"
+      "sha256": "af5bd67d9a6be82d3d9988577480f5ad0912e046c74a962f472b70fc8a7ba0e2"
     },
     {
       "path": "EventTrigger/build_eventtrigger.py",
@@ -70,15 +70,15 @@
     },
     {
       "path": "EventTrigger/tools/test_eventtrigger.be",
-      "sha256": "82766a11ecb79bd16379c417fe911236ca7b85b34d0efb0d2a923416fb2b3a3e"
+      "sha256": "9eb8bd6935372935a8381f51aec4cb533db8cf99e60709775d74de1245380745"
     },
     {
       "path": "tools/capture_event_media.be",
-      "sha256": "00ff101bb2e56eea546821c48d5e599a7142da09ec8f3cc8f92dd5f29c6b9e26"
+      "sha256": "cc687d0b0338ff630c5b827888e9188e6be56882ca856571d02f6542963c5e3d"
     },
     {
       "path": "EventTrigger/tools/test_artwork.be",
-      "sha256": "9eb302840ecc7e8a867d3f30af2d67302d6aafd34f7c5e4fa8b49852b1345dc0"
+      "sha256": "599d240ebb48e971283c85e7aefeb994d064101bf90bca7ec039612036493332"
     },
     {
       "path": "NetatmoV2/NetatmoV2.ax",

@@ -2,7 +2,7 @@
 
 **Event trigger** listens for MQTT events and brings an animated scene onto the 52 x 16 TC002 display. It stays out of the normal rotation while idle. No external icons or sound files are needed.
 
-The default presentation is **animation only, without text or sound**. Turn on **Show event labels** for a compact illustration with two short labels alongside it. One copy can handle all seven events, or separate copies can each listen to a different sensor/topic.
+The default presentation is **animation only, without text or sound**. Turn on **Show event labels** for a compact illustration with two short labels alongside it. One copy can handle all eleven events, or separate copies can each listen to a different sensor/topic.
 
 | Event name | Animation | Default MQTT topic |
 | --- | --- | --- |
@@ -13,6 +13,10 @@ The default presentation is **animation only, without text or sound**. Turn on *
 | `water` | Steel pipe drips into moving water, beside a shaded blue droplet | `homey/events/water` |
 | `doorbell` | Oversized brass bell swings beside a warm porch, with expanding ringing arcs | `homey/events/doorbell` |
 | `garage` | Sectional shutter rises and holds open, revealing a red car and headlights | `homey/events/garage` |
+| `dishwasher_finished` | Cabinet door folds down to reveal a clean plate rack beside a miniature sink | `homey/events/dishwasher_finished` |
+| `cooker_finished` | Rounded air fryer slides out a food basket beside a serving plate; steam dissipates | `homey/events/cooker_finished` |
+| `washing_machine_finished` | Washer door swings open and a garment moves into the laundry basket | `homey/events/washing_machine_finished` |
+| `dryer_finished` | Dryer opens and a towel joins a folded stack as warm air dissipates | `homey/events/dryer_finished` |
 
 These proposed topics are configurable; they are not assumed to exist in your broker. The pictures represent the supplied event, not measurements or an inference about what caused it. In particular, a mailbox contact opening alone does not tell the app whether mail arrived or was collected: publish the appropriate separate event from your Homey logic.
 
@@ -39,6 +43,12 @@ Create an event Flow for the relevant existing sensor/device. Card names depend 
 | Water-leak alarm activates | `homey/events/water` | `true` |
 | Doorbell is pressed | `homey/events/doorbell` | `true` |
 | Garage door opens | `homey/events/garage` | `true` |
+| Dishwasher finishes its cycle | `homey/events/dishwasher_finished` | `true` |
+| Cooker / air fryer finishes cooking | `homey/events/cooker_finished` | `true` |
+| Washing machine finishes its cycle | `homey/events/washing_machine_finished` | `true` |
+| Dryer finishes its cycle | `homey/events/dryer_finished` | `true` |
+
+For appliance completions, publish from the Homey Flow that detects the cycle finishing, using **pulse** mode. The script displays the supplied completion event; it does not infer it from power consumption or a running/not-running reading. If the appliance already publishes `finished` and `running` states, use a fixed **Event mode**, **edge** triggering, and **exact** matching with active `finished` and inactive `running`. Each next cycle rearms the completion scene.
 
 With the default **pulse** mode, send a message for each occurrence. Repeated messages for the same event within the default three-second cooldown are ignored. A valid `false` clears that event's queued/current scene; it does not trigger another animation.
 
@@ -83,7 +93,7 @@ Boolean matching also supports numeric/string 1/0, Yes/No, On/Off and check/cros
 | Show event labels | Off | Fixed short labels alongside compact artwork |
 | Wake display for events | Off | If enabled, request display power on when an event starts |
 
-At most one pending event of each type is kept. Multiple types can queue, up to seven. Heat/water have first priority when the next scene is selected, then doorbell, then the other events in arrival order. An incoming event does not claim to interrupt an already visible scene or a firmware notification. Queued events expire rather than replaying old activity indefinitely.
+At most one pending event of each type is kept. Multiple types can queue, up to eleven. Heat/water have first priority when the next scene is selected, then doorbell, then the other events in arrival order. An incoming event does not claim to interrupt an already visible scene or a firmware notification. Queued events expire rather than replaying old activity indefinitely.
 
 Select acknowledges the event and clears this app's queue. Left/right keep their normal firmware navigation. The app does not change brightness, sound, saved device settings or global rotation-pause settings. If you enable **Wake display**, it turns display power on and does not automatically turn it off afterward.
 
@@ -97,9 +107,9 @@ Select acknowledges the event and clears this app's queue. Left/right keep their
 
 The artwork uses an original, cohesive miniature-world style: midnight backgrounds, warm cream highlights, teal metalwork, brass accents and shaded sprites. All 52 x 16 pixels form the full-panel composition. Optional labels use a separately composed 26-pixel scene, a two-pixel gutter, and the native font on the right; sprites retain their proportions. Neutral metal greys use equal RGB channels; the blue backgrounds and teal mailbox are intentional colors.
 
-Each four-second animation loop has its own action and resting beat. Mail arrives through the opening and disappears behind its lip; pickup reverses the direction toward the waiting person. The garage opens and pauses to show the car. The rework takes visual cues from the [featured Hub gallery](https://awtrix.de/scripts/all?sort=picked), including the readable silhouettes and miniature scenes in [Super Alarm Clock](https://awtrix.de/script/ybNQ4zV5qxfS); its artwork and code are original rather than copied Hub assets.
+Each four-second animation loop has its own action and resting beat. Mail arrives through the opening and disappears behind its lip; pickup reverses the direction toward the waiting person. The garage opens and pauses to show the car. Appliance scenes use the same shaded miniature-room composition: the dishwasher folds open, the air fryer slides out its basket, and laundry moves from the open washer/dryer toward a basket or towel stack. Each action settles by three seconds; only small highlights continue until the four-second loop restarts. Compact scenes keep the opening action and appliance contents at native proportions. The rework takes visual cues from the [featured Hub gallery](https://awtrix.de/scripts/all?sort=picked), including the readable silhouettes and miniature scenes in [Super Alarm Clock](https://awtrix.de/script/ybNQ4zV5qxfS); its artwork and code are original rather than copied Hub assets.
 
-All media are **simulations from the actual generated script's Berry drawing calls**, with sample MQTT events and the official upstream font. They are not recordings of a physical TC002. The showcase stages the seven examples in sequence; the real app does not automatically cycle through events while idle. Labelled variants let you compare the optional presentation.
+All media are **simulations from the actual generated script's Berry drawing calls**, with sample MQTT events and the official upstream font. They are not recordings of a physical TC002. The showcase stages the eleven examples in sequence; the real app does not automatically cycle through events while idle. Labelled variants let you compare the optional presentation.
 
 Run the full repository build from the project root:
 

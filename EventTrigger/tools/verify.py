@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SCENES = {"motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"}
+SCENES = {"motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage", "dishwasher_finished", "cooker_finished", "washing_machine_finished", "dryer_finished"}
 
 
 def main():
@@ -57,7 +57,7 @@ def main():
         harness = (ROOT / "tools" / name).read_text(encoding="utf-8")
         mocked = json.loads(re.search(r"var advances = (\{.*?\})", harness, re.S).group(1))
         assert mocked == advances, f"Font advances differ from official BDF in {name}"
-    print(f"PASS: Event trigger generation, {len(settings)} settings, seven scene IDs, subscribe-only/device-setting boundaries")
+    print(f"PASS: Event trigger generation, {len(settings)} settings, {len(SCENES)} scene IDs, subscribe-only/device-setting boundaries")
 
 
 if __name__ == "__main__":

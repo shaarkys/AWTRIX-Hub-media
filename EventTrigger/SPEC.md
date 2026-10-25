@@ -11,10 +11,16 @@ One standalone generated Berry app named **Event trigger**, installable as `Even
 4. `water`: steel pipe, falling drops, shaded blue droplet and moving water.
 5. `doorbell`: warm porch and oversized shaded brass bell with outward ringing arcs.
 6. `garage`: sectional garage door rises, pauses open and reveals a red car/headlights.
+7. `dishwasher_finished`: cabinet door folds down to reveal a clean plate rack, with a miniature sink in full-width mode.
+8. `cooker_finished`: rounded countertop air fryer slides out a cooked food basket, then holds while residual steam dissipates.
+9. `washing_machine_finished`: front-loading washer door opens left; full-width mode unloads a garment into a laundry basket.
+10. `dryer_finished`: dryer door opens right; full-width mode places a towel on a folded stack while warm air dissipates.
+
+Existing scene indices remain unchanged; the four completion IDs are appended. The app receives explicit completion events; it does not infer an appliance cycle from power readings. Completion scenes use normal duration and priority.
 
 Graphics are procedural elapsed-time animation, no external icons/downloads. Full panel by default. Optional labels use compact artwork on the left and two short fixed labels on the right. No incoming text is drawn directly. No sound by default or required sound assets.
 
-Artwork uses original palette-indexed sprites, batched into horizontal native fill calls. Full-width composition uses 52 pixels; compact mode is independently composed at 26 pixels without horizontal scaling. The artwork clips sprites during entrance/exit and reserves the 26..27 gutter for labels beginning at x=28. Four-second deterministic loops are checked at every 25 ms phase, including the mailbox masking and the eased garage shutter.
+Artwork uses original palette-indexed sprites, batched into horizontal native fill calls. Full-width composition uses 52 pixels; compact mode is independently composed at 26 pixels without horizontal scaling. The artwork clips sprites during entrance/exit and reserves the 26..27 gutter for labels beginning at x=28. Four-second deterministic loops are checked at every 25 ms phase, including the mailbox masking and the eased garage shutter. The four appliance scenes use small shaded sprites in matching rooms, independently composed in full/compact modes. Their opening/unloading action settles by 3000 ms; only decorative glints change during the final second. No repeated food, rack or towel jitter or large checkmark overlay is used.
 
 ## Files and interface
 
@@ -25,8 +31,8 @@ Artwork uses original palette-indexed sprites, batched into horizontal native fi
 
 ## Settings and MQTT
 
-- `topic` text default `homey/events/+`: a single MQTT filter. Auto routing recognizes the last topic level using the seven names above. No assumed real device topics.
-- `event_mode` select `auto` plus the seven event names: fixed mode allows arbitrary existing topics and separate installed copies of the same app.
+- `topic` text default `homey/events/+`: a single MQTT filter. Auto routing recognizes the last topic level using the eleven names above. No assumed real device topics.
+- `event_mode` select `auto` plus the eleven event names: fixed mode allows arbitrary existing topics and separate installed copies of the same app.
 - `trigger_mode` select `pulse,edge`, default `pulse`. Pulse reacts to each valid active message, subject to cooldown. Edge triggers only inactive-to-active transitions; valid inactive readings rearm it.
 - `payload_field` text default empty: optional top-level field for activity; otherwise accept primitive or `{value:...}` or `{active:...}`. JSON `{event:NAME, active:true}` routes explicitly in auto mode. A recognized plain event-name string is also an active pulse in auto mode. An explicit invalid `event` field is rejected, never guessed from the topic.
 - `match_mode` select `boolean,exact,any`, default `boolean`. Boolean accepts true/false, 1/0, yes/no, on/off, check/cross glyphs. Exact matches trimmed case-insensitive `active_value` (default `true`) and `inactive_value` (default `false`); unknown values are ignored, never clear. Any is explicitly event-per-message, excluding empty/malformed payloads and explicit inactive Boolean/active:false.
@@ -37,7 +43,7 @@ Artwork uses original palette-indexed sprites, batched into horizontal native fi
 
 ## Queue and display lifecycle
 
-- One pending entry per scene, at most seven. Coalesce repeated pending pulses, expire pending events after `queue_seconds` using wrap-safe elapsed time. Heat/water priority 3; doorbell 2; others 1; FIFO timestamps within equal priority.
+- One pending entry per scene, at most eleven. Coalesce repeated pending pulses, expire pending events after `queue_seconds` using wrap-safe elapsed time. Heat/water priority 3; doorbell 2; others 1; FIFO sequence order within equal priority.
 - Each accepted pulse obeys per-scene cooldown and optional ID dedup. Edge state is rearmed only by a valid inactive value. A valid inactive message removes pending events of that scene and ends a matching current scene; it never clears unrelated events.
 - `should_show()` is false when there is no current or pending event. Always keep the app enabled so MQTT works while idle.
 - Select the highest-priority pending event before `rotation.show()`; request once per event while hidden. `on_show()` marks it shown and starts its elapsed animation clock. Handle synchronous or deferred on_show safely. A false show result drops that request and logs once; no unbounded retry loop.
@@ -47,6 +53,6 @@ Artwork uses original palette-indexed sprites, batched into horizontal native fi
 
 ## Verification and boundaries
 
-Use the existing 32-bit/single-precision Berry 1.1 executable, real parsing and comprehensive mocks. Cover every routing/matching mode, both pulse/edge, false/rearm, malformed/oversized data, dedup/cooldown, queue bounds, priority/FIFO, expiry, clock wrap, synchronous/deferred rotation.show, rejection, acknowledgement and full drawing bounds. Capture all seven scenes and optional labels through actual generated app drawing calls. Shared Python pipeline renders with the official BDF, validates PNG/GIF pixels/timing, provenance and ZIP contents.
+Use the existing 32-bit/single-precision Berry 1.1 executable, real parsing and comprehensive mocks. Cover every routing/matching mode, both pulse/edge, false/rearm, malformed/oversized data, dedup/cooldown, queue bounds, priority/FIFO, expiry, clock wrap, synchronous/deferred rotation.show, rejection, acknowledgement and full drawing bounds. Capture all eleven scenes and optional labels through actual generated app drawing calls. Shared Python pipeline renders with the official BDF, validates PNG/GIF pixels/timing, provenance and ZIP contents.
 
 No broker publishes, clock installation, Homey Flow edits, Git commits/pushes or Hub publishing are authorized by this feature request. Other work may exist: preserve edits outside assigned files. Tests and simulations do not prove physical TC002 or MQTT delivery behavior.
