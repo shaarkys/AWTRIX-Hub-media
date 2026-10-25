@@ -1,45 +1,56 @@
 {
-  "captured_at": "2026-10-24",
   "sources": [
     {
-      "label": "SolarApp.ax",
-      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp.ax",
+      "path": "SolarApp/SolarApp.ax",
       "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
     },
     {
-      "label": "SolarApp-TC002-Animated.ax (byte-identical)",
-      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp-TC002-Animated.ax",
+      "path": "SolarApp/SolarApp-TC002-Animated.ax",
       "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
     },
     {
-      "label": "SolarApp-TC002-SourceAware.ax (byte-identical)",
-      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp-TC002-SourceAware.ax",
+      "path": "SolarApp/SolarApp-TC002-SourceAware.ax",
       "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
     },
     {
-      "label": "PelletStove.ax",
-      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/PelletStove.ax",
-      "sha256": "76af4bf3f146dc44bff95b57384b970e1561cb7a6a5c372c2d6e819e86f7ed86"
+      "path": "SolarApp/test_solarapp.be",
+      "sha256": "0a361e30e2209085ed5eb9c63eb38fe37e4cb1b217c40318f5115af2dda8aee7"
     },
     {
-      "label": "PelletStove Berry capture harness",
-      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/test_pelletstove.be",
-      "sha256": "db20cc235b96f21cbc97de787fd9299536e611160dce22766dba2e2c1727995e"
+      "path": "PelletStove/PelletStove.ax",
+      "sha256": "342988cc566fd853290a87b7c57c64a36dad099e519ae4eb5d79ed5b4a9844f6"
     },
     {
-      "label": "official AWTRIX NG small BDF",
-      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/awtrix-small.bdf",
+      "path": "PelletStove/tools/test_pelletstove.be",
+      "sha256": "3b7ec8f944c43154ba7ddaf7c11a58e57182799eb9810550358cd10eb6e23d68"
+    },
+    {
+      "path": "PelletStove/input-contract.json",
+      "sha256": "afcd90e0dbb37ad083587ec78aeba2ae2ef746060e2e004efea016a0805d6266"
+    },
+    {
+      "path": "tools/capture_solar_media.be",
+      "sha256": "349d4353e6fe782aba76559b87792a906807e83ababf97c01d45b4602b1a191e"
+    },
+    {
+      "path": "tools/capture_pellet_media.be",
+      "sha256": "ec05363935eeae72bf3922d258a7ee57dcd0472d99743099a5f0e3bd3ee89f44"
+    },
+    {
+      "path": "tools/render_media.py",
+      "sha256": "4c9fbc43c06c814ae3e93766f8beab1c3d6755dd81f04b0e0c0ce79d7f3611af"
+    },
+    {
+      "path": "source-notices/awtrix-small.bdf",
       "sha256": "7e2e83ab23789330df47b03899b171af6a6d8692d4d0f9e5bf17e634d9027c36"
     },
     {
-      "label": "font license",
-      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/FONT-LICENSE.txt",
+      "path": "source-notices/FONT-LICENSE.txt",
       "sha256": "7db5ddbfb3c4b6bc390f9406d4129a38094af37faaf16ed53666c379e51e596b"
     },
     {
-      "label": "font provenance notice",
-      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/FONT-NOTICE.md",
-      "sha256": "2d5a100a7acce81a5740a9cccee35263dc3aeb85e9da89dddf722d9f70ecf57f"
+      "path": "source-notices/FONT-NOTICE.md",
+      "sha256": "157821047384b1c46b4b6f18dcf9d0027cb21193707ef22ab4acdcfc5884e5c6"
     }
   ]
 }

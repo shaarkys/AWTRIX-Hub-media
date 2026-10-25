@@ -1,0 +1,25 @@
+{
+  "source_repository": "shaarkys/com.haassohn.pellets",
+  "source_revision": "563e1fd7166447dbfb33fbc20dffa3d070a3f02e",
+  "note": "Frozen input contract; publishing is supplied by a Homey MQTT Flow, not the driver itself.",
+  "capabilities": [
+    "onoff",
+    "stove_mode",
+    "stove_status",
+    "measure_temperature",
+    "target_temperature",
+    "stove_pellets_actual",
+    "measure_stove_cleaning_in",
+    "measure_stove_maintenance_in",
+    "stove_error_state"
+  ],
+  "units": {
+    "measure_stove_cleaning_in": "h",
+    "measure_stove_maintenance_in": "%",
+    "stove_pellets_actual": "kg"
+  },
+  "target_temperature": {
+    "min": 5,
+    "max": 35
+  }
+}

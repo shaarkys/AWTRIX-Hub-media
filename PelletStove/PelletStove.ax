@@ -1,0 +1,710 @@
+# @name PelletStove
+# @desc MQTT pellet stove: powered-on mode, temperatures, fuel, cleaning, ash and faults
+# @version 1.0.0
+# @display 52x16
+# @config topic_mode text "Mode MQTT topic" default="homey/pellet_stove/stove_mode" group="MQTT topics"
+# @config topic_status text "Heating MQTT topic" default="homey/pellet_stove/stove_status" group="MQTT topics"
+# @config topic_pellets text "Pellets MQTT topic (kg)" default="homey/pellet_stove/stove_pellets_actual" group="MQTT topics"
+# @config topic_cleaning text "Cleaning MQTT topic (hours)" default="homey/pellet_stove/measure_stove_cleaning_in" group="MQTT topics"
+# @config topic_ash text "Ash limit MQTT topic (% used)" default="homey/pellet_stove/measure_stove_maintenance_in" group="MQTT topics"
+# @config topic_error text "Error MQTT topic" default="homey/pellet_stove/stove_error_state" group="MQTT topics"
+# @config topic_actual text "Actual temperature MQTT topic (C)" default="homey/pellet_stove/measure_temperature" group="MQTT topics"
+# @config topic_target text "Target temperature MQTT topic (C)" default="homey/pellet_stove/target_temperature" group="MQTT topics"
+# @config topic_onoff text "Turned on MQTT topic (Yes/No)" default="homey/pellet_stove/onoff" group="MQTT topics" help="Required: actual Homey onoff capability. Yes/true enables readings; No/false shows OFF."
+# @config topic_state text "Combined JSON topic (overrides individual topics)" default="" group="MQTT topics" help="Nonempty uses one JSON subscription. Exact capability names as keys, including onoff."
+# @config rotate_seconds number "Seconds per view" default=5 min=2 max=30 group="Display"
+# @config change_seconds number "Seconds for important changes" default=8 min=2 max=30 group="Display"
+# @config error_repeat number "Repeat active error (seconds)" default=30 min=15 max=300 group="Display"
+# @config anim_speed number "Animation speed" default=4 min=1 max=10 group="Display"
+# @config show_pellets bool "Show pellets" default=true group="Display"
+# @config show_cleaning bool "Show cleaning" default=true group="Display"
+# @config show_ash bool "Show ash limit" default=true group="Display"
+# @config show_error bool "Show error state when clear" default=true group="Display" help="Active or last-known stale faults remain eligible while the power/mode gates are open."
+# @config show_temperature bool "Show actual and target temperature" default=true group="Display"
+# @config standby_skip bool "Skip standby except temperature changes" default=false group="Display" help="Skip display turns in standby. MQTT stays active. With power Yes, a temperature change allows one temperature-only turn."
+# @config hopper_kg number "Full hopper capacity (kg)" default=30 min=1 max=999 group="Warnings" help="For a 30 kg hopper: 0 empty, 15 half, 30 full."
+# @config low_pellets number "Low pellets warning (kg)" default=3 min=0 max=999 group="Warnings"
+# @config clean_warning number "Cleaning warning (hours left)" default=5 min=0 max=999 group="Warnings"
+# @config ash_warning number "Ash limit warning (% used)" default=80 min=1 max=100 group="Warnings"
+# @config data_timeout number "Reading timeout (seconds)" default=0 min=0 max=86400 group="Freshness" help="0 disables age expiry; power/mode gates still apply. With one-minute refreshes, try 180 seconds."
+
+import json
+import string
+
+class PelletStove
+  var topics, fields, values, updated, expired, invalid, enabled, pending, labels
+  var view, view_started, hold_ms, rotate_ms, change_ms, repeat_ms, error_shown
+  var timeout_ms, capacity, low_kg, clean_h, ash_pct, speed, shown
+  var standby_skip, standby_pending, standby_visit
+
+  def init()
+    self.topics = [store.get("topic_mode", "homey/pellet_stove/stove_mode"),
+      store.get("topic_status", "homey/pellet_stove/stove_status"),
+      store.get("topic_pellets", "homey/pellet_stove/stove_pellets_actual"),
+      store.get("topic_cleaning", "homey/pellet_stove/measure_stove_cleaning_in"),
+      store.get("topic_ash", "homey/pellet_stove/measure_stove_maintenance_in"),
+      store.get("topic_error", "homey/pellet_stove/stove_error_state"),
+      store.get("topic_actual", "homey/pellet_stove/measure_temperature"),
+      store.get("topic_target", "homey/pellet_stove/target_temperature"),
+      store.get("topic_onoff", "homey/pellet_stove/onoff"),
+      store.get("topic_state", "")]
+    self.fields = ["stove_mode", "stove_status", "stove_pellets_actual",
+      "measure_stove_cleaning_in", "measure_stove_maintenance_in", "stove_error_state",
+      "measure_temperature", "target_temperature", "onoff"]
+    self.values = [nil, nil, nil, nil, nil, nil, nil, nil, nil]
+    self.updated = [nil, nil, nil, nil, nil, nil, nil, nil, nil]
+    self.expired = [false, false, false, false, false, false, false, false, false]
+    self.invalid = [false, false, false, false, false, false, false, false, false]
+    self.enabled = [true, store.get("show_pellets", true), store.get("show_cleaning", true),
+      store.get("show_ash", true), store.get("show_error", true), store.get("show_temperature", true)]
+    self.pending = [0, 0, 0, 0, 0, 0]
+    self.labels = ["--", "--", "--", "--", "--", "--", "--", "SET --"]
+    self.rotate_ms = int(clamp(num(store.get("rotate_seconds"), 5), 2, 30)) * 1000
+    self.change_ms = int(clamp(num(store.get("change_seconds"), 8), 2, 30)) * 1000
+    self.repeat_ms = int(clamp(num(store.get("error_repeat"), 30), 15, 300)) * 1000
+    self.timeout_ms = int(clamp(num(store.get("data_timeout"), 0), 0, 86400)) * 1000
+    self.capacity = clamp(num(store.get("hopper_kg"), 30), 1, 999)
+    self.low_kg = clamp(num(store.get("low_pellets"), 3), 0, 999)
+    self.clean_h = clamp(num(store.get("clean_warning"), 5), 0, 999)
+    self.ash_pct = clamp(num(store.get("ash_warning"), 80), 1, 100)
+    self.speed = int(clamp(num(store.get("anim_speed"), 4), 1, 10))
+    self.view = 0
+    self.view_started = now_ms()
+    self.error_shown = nil
+    self.hold_ms = self.rotate_ms
+    self.shown = false
+    self.standby_skip = store.get("standby_skip", false)
+    self.standby_pending = [false, false]
+    self.standby_visit = false
+  end
+
+  def setup()
+    if self.topics[9] != ""
+      self.subscribe(self.topics[9])
+      log("PelletStove: subscribed to combined JSON state")
+      return
+    end
+    var subscribed = []
+    for index : 0 .. 8
+      var topic = self.topics[index]
+      var topic_filter = self.scalar_filter(topic)
+      if topic != "" && subscribed.find(topic_filter) == nil
+        subscribed.push(topic_filter)
+      end
+    end
+    if size(subscribed) > 8
+      log("PelletStove: more than 8 MQTT filters; group topic parents or configure combined JSON")
+      return
+    end
+    for topic_filter : subscribed self.subscribe(topic_filter) end
+    log("PelletStove: subscribed to " + str(size(subscribed)) + " MQTT filters")
+  end
+
+  def scalar_filter(topic)
+    # Group siblings without counting nine separate subscriptions. Route by actual topic.
+    if topic == "" return "" end
+    var slash = -1
+    for index : 0 .. size(topic) - 1
+      if topic[index] == "+" || topic[index] == "#" return topic end
+      if topic[index] == "/" slash = index end
+    end
+    return slash >= 0 ? topic[0 .. slash] + "+" : topic
+  end
+
+  def subscribe(topic_filter)
+    mqtt.subscribe(topic_filter, / topic, payload -> self.receive(topic, payload, topic_filter))
+  end
+
+  def elapsed(stamp)
+    return (now_ms() - stamp) & 0x7FFFFFFF
+  end
+
+  def fresh(index)
+    return self.updated[index] != nil && !self.expired[index] && (self.timeout_ms == 0 || self.elapsed(self.updated[index]) < self.timeout_ms)
+  end
+
+  def page(index)
+    if index == 8 return 0 end
+    if index >= 6 return 5 end
+    return index < 2 ? 0 : index - 1
+  end
+
+  def fault()
+    # A stale fault is never silently cleared by a missing update.
+    return self.values[5] == true
+  end
+
+  def paused() return self.values[0] == "STANDBY" end
+
+  def active()
+    return self.fresh(8) && self.values[8] == true && self.fresh(0) && !self.paused()
+  end
+
+  def standby_monitor()
+    return self.standby_skip && self.fresh(8) && self.values[8] == true && self.fresh(0) && self.paused()
+  end
+
+  def standby_changed()
+    return (self.standby_pending[0] && self.fresh(6)) || (self.standby_pending[1] && self.fresh(7))
+  end
+
+  def should_show()
+    if !self.standby_skip || !self.paused() return true end
+    return self.standby_monitor() && self.enabled[5] && self.standby_changed()
+  end
+
+  def heating()
+    return self.active() && self.values[0] != "COOLING" && self.fresh(1) && self.values[1] == true
+  end
+
+  def close_gate()
+    # Keep last values for diagnostics, but require new readings after a pause/power-off.
+    var monitor = self.standby_monitor()
+    for index : 1 .. 7
+      if index < 6 || !monitor self.expired[index] = true end
+    end
+    for page : 0 .. 5 self.pending[page] = 0 end
+    if !monitor
+      self.standby_pending[0] = false
+      self.standby_pending[1] = false
+      self.standby_visit = false
+    end
+    self.view = self.standby_visit ? 5 : 0
+  end
+
+  def eligible(page)
+    if page == 0 return self.updated[0] != nil || self.updated[8] != nil end
+    if page == 5 && self.standby_monitor()
+      return self.enabled[5] && (self.fresh(6) || self.fresh(7))
+    end
+    if !self.active() return false end
+    if page == 4 && self.fault() return true end
+    if !self.enabled[page] return false end
+    if page == 5 return self.updated[6] != nil || self.updated[7] != nil end
+    return self.updated[page + 1] != nil
+  end
+
+  def trim(value)
+    var first = 0
+    var last = size(value) - 1
+    while first <= last && (value[first] == " " || value[first] == "\n" || value[first] == "\r" || value[first] == "\t") first += 1 end
+    while last >= first && (value[last] == " " || value[last] == "\n" || value[last] == "\r" || value[last] == "\t") last -= 1 end
+    return first > last ? "" : value[first .. last]
+  end
+
+  def normalize(index, value)
+    if isinstance(value, map) value = value.find("value") end
+    if index == 0
+      if type(value) != "string" return nil end
+      value = string.toupper(self.trim(value))
+      return size(value) > 0 && size(value) <= 80 ? value : nil
+    end
+    if index == 1 || index == 5 || index == 8
+      if type(value) == "bool" return value end
+      if type(value) == "string" value = string.tolower(self.trim(value)) end
+      if value == 1 || value == "1" || value == "true" || value == "on" || value == "yes" return true end
+      if value == 0 || value == "0" || value == "false" || value == "off" || value == "no" return false end
+      if value == "✓" || value == "✔" || value == "✅" return true end
+      if value == "x" || value == "×" || value == "✕" || value == "✖" || value == "✗" || value == "✘" || value == "❌" return false end
+      return nil
+    end
+    if type(value) == "bool" return nil end
+    value = num(value)
+    if value == nil || value != value return nil end
+    if index == 6 return value >= -40 && value <= 100 ? value : nil end
+    if index == 7 return value >= 5 && value <= 35 ? value : nil end
+    var ceiling = index == 4 ? 100 : (index == 2 ? 999 : 1000000)
+    return value >= 0 && value <= ceiling ? value : nil
+  end
+
+  def severity(index, value)
+    if value == nil return 0 end
+    if index == 5 return value ? 4 : 0 end
+    if index == 2 return value <= self.low_kg ? 2 : 0 end
+    if index == 3 return value < 1 ? 3 : (value <= self.clean_h ? 2 : 0) end
+    if index == 4 return value > 90 ? 3 : (value >= self.ash_pct ? 2 : 0) end
+    return 0
+  end
+
+  def accept(index, raw)
+    var standby_temp = (index == 6 || index == 7) && self.standby_monitor()
+    var value = self.normalize(index, raw)
+    # A valid clear retires an old fault even before power/mode messages arrive.
+    var fault_clear = index == 5 && value == false
+    if index != 0 && index != 8 && !self.active() && !standby_temp && !fault_clear return end
+    if value == nil
+      if !self.invalid[index] log("PelletStove: invalid " + self.fields[index] + "; keeping last valid reading") end
+      self.invalid[index] = true
+      return
+    end
+    self.invalid[index] = false
+    var was_active = self.active()
+    var previous = self.values[index]
+    var before = self.severity(index, previous)
+    var after = self.severity(index, value)
+    # Drop expired events before a repeated reading refreshes its timestamp.
+    if standby_temp && !self.fresh(index) self.standby_pending[index - 6] = false end
+    self.values[index] = value
+    self.updated[index] = now_ms()
+    self.expired[index] = false
+    if (index == 0 || index == 8) && (!was_active || !self.active()) self.close_gate() end
+    if standby_temp
+      # The first reading establishes a baseline; repeated snapshots are not changes.
+      if previous != nil && previous != value self.standby_pending[index - 6] = true end
+      return
+    end
+    var priority = 0
+    if previous == nil
+      if after > 0 priority = after end
+    elif previous != value
+      if index < 2 || index == 5 || index == 7 || index == 8 || before != after
+        priority = max(1, after)
+      elif index == 2 && value - previous >= 1
+        priority = 1  # refill, not every 0.1 kg consumed
+      elif index == 3 && value - previous >= 1
+        priority = 1  # cleaning counter reset
+      elif index == 4 && previous - value >= 5
+        priority = 1  # emptied ash/reset
+      end
+    end
+    var page = self.page(index)
+    if priority > 0 && self.eligible(page)
+      self.pending[page] = max(self.pending[page], priority)
+    end
+    if index == 5 && value == false
+      # Clear the entire alert episode, including a fault queued before it was shown.
+      self.error_shown = nil
+      if previous == true
+        self.pending[4] = 0
+        log("PelletStove: fault cleared")
+        if self.view == 4
+          if self.eligible(4) self.choose(4, self.rotate_ms)
+          else self.next_view() end
+        elif self.eligible(4)
+          self.pending[4] = 1
+        end
+      end
+    end
+  end
+
+  def receive(topic, payload, topic_filter)
+    var decoded = payload
+    if type(payload) == "string"
+      try
+        var parsed = json.load(payload)
+        # Berry JSON can return nil instead of throwing on plain, non-JSON mode text.
+        if parsed != nil || self.trim(payload) == "null" decoded = parsed end
+      except .. end
+    end
+    if self.topics[9] != "" && (topic == self.topics[9] || topic_filter == self.topics[9])
+      if !isinstance(decoded, map)
+        log("PelletStove: combined state must be a JSON object")
+        return
+      end
+      # Power and mode are always accepted first, regardless of key order in the packet.
+      var power = decoded.find("onoff")
+      if power != nil self.accept(8, power) end
+      var mode = decoded.find("stove_mode")
+      if mode != nil self.accept(0, mode) end
+      for index : 1 .. 7
+        var value = decoded.find(self.fields[index])
+        if value != nil self.accept(index, value) end
+      end
+      self.refresh()
+      return
+    end
+    for index : 0 .. 8
+      if topic == self.topics[index] || (topic_filter != nil && topic_filter == self.topics[index]) self.accept(index, decoded) end
+    end
+    self.refresh()
+  end
+
+  def fit(label)
+    # The left 16 columns are artwork; the last column is a fault/status marker.
+    while size(label) > 0 && text_width(label) > 34 label = label[0 .. size(label) - 2] end
+    return label
+  end
+
+  def refresh()
+    font("small")
+    self.labels[0] = self.fresh(0) ? self.fit(self.values[0]) : "--"
+    self.labels[1] = self.heating() ? "HEATING" : "ON"
+    self.labels[2] = self.fresh(2) ? self.fit(format("%.1fkg", self.values[2])) : "--"
+    self.labels[3] = self.fresh(3) ? format(self.values[3] >= 1000 ? "%.0fh" : "%.1fh", self.values[3]) : "--"
+    self.labels[4] = self.fresh(4) ? format("%.1f%%", self.values[4]) : "--"
+    self.labels[5] = self.fresh(5) ? (self.values[5] ? "FAULT" : "CLEAR") : (self.fault() ? "FAULT" : "UNKNOWN")
+    self.labels[6] = self.fresh(6) ? format("%.1fC", self.values[6]) : "--"
+    self.labels[7] = self.fresh(7) ? "SET" + format("%.1fC", self.values[7]) : "SET --"
+  end
+
+  def choose(page, hold)
+    self.view = page
+    self.view_started = now_ms()
+    self.hold_ms = hold
+    self.pending[page] = 0
+    if page == 4 && self.fault() self.error_shown = now_ms() end
+  end
+
+  def next_view()
+    var page = self.view
+    for offset : 1 .. 6
+      # Stove -> temperature -> pellets -> cleaning -> ash -> error.
+      if page == 0 page = 5
+      elif page == 5 page = 1
+      elif page == 4 page = 0
+      else page += 1 end
+      if self.eligible(page)
+        self.choose(page, self.rotate_ms)
+        return
+      end
+    end
+    self.choose(0, self.rotate_ms)
+  end
+
+  def tick()
+    if !self.active()
+      self.close_gate()
+      if self.standby_visit && self.eligible(5) return end
+      self.choose(0, self.rotate_ms)
+      return
+    end
+    if self.fault() && (self.error_shown == nil || self.elapsed(self.error_shown) >= self.repeat_ms)
+      self.pending[4] = 4
+    end
+    var best = -1
+    var priority = 0
+    for page : 0 .. 5
+      if self.eligible(page) && self.pending[page] > priority
+        best = page
+        priority = self.pending[page]
+      end
+    end
+    # Faults can interrupt at once. Other changes wait until the current view finishes.
+    if best >= 0 && (best == 4 && self.fault() || self.elapsed(self.view_started) >= self.hold_ms)
+      self.choose(best, self.change_ms)
+    elif !self.eligible(self.view) || self.elapsed(self.view_started) >= self.hold_ms
+      self.next_view()
+    end
+  end
+
+  def loop()
+    # Expire timestamps permanently so a wrapping millisecond counter cannot revive data.
+    if self.timeout_ms > 0
+      for index : 0 .. 8
+        if self.updated[index] != nil && self.elapsed(self.updated[index]) >= self.timeout_ms
+          # Keep presence and last value for an explicit STALE page.
+          self.expired[index] = true
+        end
+      end
+    end
+    if !self.active() self.close_gate() end
+    for index : 6 .. 7
+      if !self.fresh(index) self.standby_pending[index - 6] = false end
+    end
+    self.refresh()
+    if self.shown self.tick() end
+  end
+
+  def on_show()
+    self.shown = true
+    self.refresh()
+    if self.standby_monitor() && self.enabled[5] && self.standby_changed()
+      self.standby_visit = true
+      self.standby_pending[0] = false
+      self.standby_pending[1] = false
+      self.choose(5, self.change_ms)
+      return
+    end
+    self.standby_visit = false
+    # Consume the highest queued change on entry, otherwise retain the current view.
+    var queued = false
+    for page : 0 .. 5
+      if self.eligible(page) && self.pending[page] > 0 queued = true end
+    end
+    if queued self.view_started = now_ms() - self.hold_ms
+    else self.choose(self.view, self.rotate_ms) end
+    self.tick()
+  end
+
+  def on_hide()
+    self.shown = false
+    self.standby_visit = false
+  end
+
+  def duration()
+    if self.standby_visit && self.standby_monitor() return self.change_ms end
+    var count = 0
+    for page : 0 .. 5
+      if self.eligible(page) count += 1 end
+    end
+    return max(1, count) * self.rotate_ms + self.change_ms + 1000
+  end
+
+  def on_button(btn)
+    if btn != "select" return false end
+    if self.standby_visit && self.standby_monitor() return true end
+    self.next_view()
+    return true
+  end
+
+  def draw_stove(phase)
+    rect_fill(3, 2, 10, 12, 0x34414D)
+    rect_fill(4, 3, 8, 9, 0x52616C)
+    rect_fill(2, 1, 12, 2, 0x91A0AA)
+    rect_fill(5, 4, 6, 7, 0x080E14)
+    line(3, 13, 12, 13, 0x131D28)
+    pixel(3, 14, 0x9EABB2) pixel(12, 14, 0x9EABB2)
+    pixel(12, 6, 0xD8B572)
+    line(6, 12, 10, 12, 0x9EABB2)
+    if self.fresh(0) && self.values[0] == "COOLING"
+      self.draw_fan(phase)
+    elif self.heating()
+      for x : 5 .. 10
+        var flame = 2 + (phase + x * 3) % 5
+        line(x, 10, x, 11 - flame, 0xE64D0A)
+        if flame > 2 line(x, 10, x, 13 - flame, 0xFFAB1F) end
+      end
+      pixel(7 + phase % 2, 10, 0xFFF0A0)
+      pixel(6 + phase % 4, 3, 0xB96327)
+    else
+      line(6, 10, 9, 10, 0x33424D)
+    end
+  end
+
+  def draw_fan(phase)
+    # A blue four-blade fan inside the dark stove window, alternating its angle.
+    if phase % 2 == 0
+      line(8, 5, 8, 9, 0x60BFCB)
+      line(6, 7, 10, 7, 0x60BFCB)
+      pixel(7, 5, 0x9FE1E9) pixel(10, 6, 0x9FE1E9)
+      pixel(9, 9, 0x9FE1E9) pixel(6, 8, 0x9FE1E9)
+    else
+      line(6, 5, 10, 9, 0x60BFCB)
+      line(6, 9, 10, 5, 0x60BFCB)
+      pixel(7, 5, 0x9FE1E9) pixel(10, 8, 0x9FE1E9)
+      pixel(9, 9, 0x9FE1E9) pixel(6, 6, 0x9FE1E9)
+    end
+    pixel(8, 7, 0xE1F9FF)
+  end
+
+  def draw_pellets(phase)
+    rect_fill(3, 2, 10, 10, 0x1C292D)
+    line(2, 1, 13, 1, 0xB7C5CA)
+    line(2, 2, 3, 11, 0x738A91)
+    line(13, 2, 12, 11, 0x738A91)
+    line(3, 12, 7, 15, 0x738A91)
+    line(12, 12, 9, 15, 0x738A91)
+    line(15, 3, 15, 10, 0x25383C)
+    if self.fresh(2)
+      var level = int(clamp(self.values[2] / (self.capacity * 1.0), 0, 1) * 8)
+      if level > 0
+        line(15, 11 - level, 15, 10, 0xDAAD64)
+        rect_fill(4, 11 - level, 8, level, 0x7C491E)
+        for y : 11 - level .. 10
+          for x : 4 .. 11
+            if (x + y * 3) % 4 == 0 pixel(x, y, 0xE4AB60) end
+          end
+        end
+      end
+      if self.values[2] > 0 && self.heating()
+        pixel(7 + phase % 2, 12 + phase % 3, 0xF6C783)
+      end
+    end
+  end
+
+  def draw_cleaning(phase)
+    # A small cyan microfiber cloth wipes the stove face; no heating/fan imagery here.
+    rect_fill(3, 2, 10, 12, 0x34414D)
+    rect_fill(4, 3, 8, 9, 0x52616C)
+    rect_fill(2, 1, 12, 2, 0x91A0AA)
+    rect_fill(5, 4, 6, 7, 0x10232C)
+    line(6, 12, 10, 12, 0x9EABB2)
+    pixel(3, 14, 0x9EABB2) pixel(12, 14, 0x9EABB2)
+    var sweep = phase % 12
+    var forward = sweep <= 6
+    if !forward sweep = 12 - sweep end
+    var cloth_x = 2 + sweep
+    var cloth_y = 4 + (phase / 6) % 2
+    # The glass is clean behind the cloth, with a few specks still ahead of it.
+    if forward
+      if cloth_x + 4 < 10 pixel(10, 5, 0x6A6254) end
+      if cloth_x + 4 < 9 pixel(9, 9, 0x6A6254) end
+    end
+    rect_fill(cloth_x, cloth_y, 5, 5, 0x338C9E)
+    rect_fill(cloth_x, cloth_y, 4, 4, 0x78DEE1)
+    line(cloth_x, cloth_y, cloth_x + 3, cloth_y, 0xC6FFFF)
+    pixel(cloth_x + 1, cloth_y + 1, 0x4FB9C8)
+    pixel(cloth_x + 2, cloth_y + 2, 0x4FB9C8)
+    pixel(cloth_x + 1, cloth_y + 3, 0x4FB9C8)
+    pixel(cloth_x + 4, cloth_y + 4, 0x96F2ED)
+    if forward && cloth_x > 5
+      pixel(5, 5, 0xC6FFFF)
+      if phase % 2 == 0 pixel(4, 5, 0x70AAB6) pixel(5, 4, 0x70AAB6) end
+    elif !forward && cloth_x + 4 < 9
+      pixel(10, 5, 0xC6FFFF)
+      if phase % 2 == 0 pixel(9, 5, 0x70AAB6) pixel(10, 4, 0x70AAB6) end
+    end
+  end
+
+  def draw_ash(phase)
+    # Ash tray: measured usage scales both the ash bed and soot on the inner walls.
+    rect_fill(1, 1, 14, 14, 0x586C77)
+    rect_fill(2, 2, 12, 11, 0x202B31)
+    line(1, 1, 14, 1, 0xA2B3BA)
+    line(2, 14, 13, 14, 0x91A2AB)
+    line(6, 14, 9, 14, 0xD4DBDE)
+    if self.fresh(4)
+      var level = int(self.values[4] * 10 / 100)
+      if level > 0
+        rect_fill(3, 13 - level, 10, level, 0x77756C)
+        for y : 13 - level .. 12
+          for x : 3 .. 12
+            if (x * 7 + y * 3) % 5 == 0 pixel(x, y, 0xBBB7A7) end
+            if (x * 3 + y) % 7 == 0 pixel(x, y, 0x484B46) end
+          end
+        end
+        pixel(3 + phase % 10, 13 - level, 0xD6D1BC)
+      end
+      var soot = int(self.values[4] * 12 / 100)
+      if soot > 0
+        for spot : 0 .. soot - 1
+          pixel(spot % 2 == 0 ? 2 : 13, 2 + spot / 2, 0x0B1115)
+        end
+      end
+    end
+  end
+
+  def draw_error(phase)
+    var color = self.fault() ? (phase % 4 < 2 ? 0xFF4B38 : 0xA92A20) : 0x4CA991
+    if self.fault() || !self.fresh(5)
+      for y : 1 .. 13
+        var half = (y + 1) / 2
+        line(8 - half, y, 8 + half, y, color)
+      end
+      line(8, 5, 8, 9, 0x1E0D0C)
+      pixel(8, 11, 0x1E0D0C)
+    else
+      rect_fill(2, 2, 12, 12, 0x173A34)
+      line(4, 8, 7, 11, color)
+      line(7, 11, 12, 5, color)
+      line(4, 7, 7, 10, 0x9AF2C7)
+      line(7, 10, 12, 4, 0x9AF2C7)
+    end
+  end
+
+  def draw_temperature(phase)
+    rect_fill(5, 1, 6, 12, 0xA0BBC5)
+    rect_fill(6, 2, 4, 10, 0x12232D)
+    rect_fill(4, 11, 8, 4, 0xA0BBC5)
+    rect_fill(5, 11, 6, 3, 0x12232D)
+    if self.fresh(6)
+      var color = self.fresh(7) && self.values[6] < self.values[7] ? 0xFF7943 : 0x4ED2CD
+      var level = int(clamp((self.values[6] - 5) / 30.0, 0, 1) * 9)
+      rect_fill(6, 11, 4, 3, color)
+      if level > 0 rect_fill(7, 11 - level, 2, level, color) end
+      pixel(6 + phase % 2, 12, 0xFFE5C4)
+    end
+    if self.fresh(7)
+      var mark = 10 - int(clamp((self.values[7] - 5) / 30.0, 0, 1) * 8)
+      # Cyan arrow points at the target level without looking like a minus sign.
+      pixel(12, mark, 0x70C7BB)
+      line(13, mark - 1, 13, mark + 1, 0x70C7BB)
+      line(14, mark - 2, 14, mark + 2, 0x70C7BB)
+    end
+  end
+
+  def draw()
+    clear()
+    font("small")
+    var phase = (now_ms() & 0x7FFFFFFF) / (300 - self.speed * 20)
+    var blink_on = ((now_ms() & 0x7FFFFFFF) / 500) % 2 == 0
+    var present = false
+    for page : 0 .. 5
+      if self.eligible(page) present = true end
+    end
+    if !present
+      self.draw_stove(phase)
+      text(17, 6, "NO DATA", 0xFFC66A)
+      text(17, 14, "MQTT", 0x7398B0)
+      return
+    end
+    if self.standby_visit && self.standby_monitor() && self.eligible(5)
+      self.draw_temperature(phase)
+      text(17, 6, self.labels[6], 0xFFE2AF)
+      text(17, 14, self.labels[7], 0x70C7BB)
+      return
+    end
+    if !self.active()
+      self.draw_stove(phase)
+      var upper = "POWER?"
+      var lower = self.updated[8] == nil ? "NO DATA" : "STALE"
+      if self.fresh(8)
+        if !self.values[8]
+          upper = "OFF"
+          lower = self.fresh(0) ? self.labels[0] : "POWER"
+        elif !self.fresh(0)
+          upper = "MODE?"
+          lower = self.updated[0] == nil ? "NO DATA" : "STALE"
+        else
+          upper = "STANDBY"
+          lower = "PAUSED"
+        end
+      end
+      text(17, 6, upper, 0x9AA3AD)
+      text(17, 14, lower, 0x70C7BB)
+      return
+    end
+    var color = 0xFFE2AF
+    var lower = ""
+    var upper = ""
+    var stale = false
+    var blink = false
+    if self.view == 0
+      self.draw_stove(phase)
+      upper = self.labels[1]
+      lower = self.labels[0]
+      stale = !self.fresh(0) && !self.fresh(1)
+    elif self.view == 1
+      self.draw_pellets(phase)
+      upper = self.labels[2]
+      lower = "PELLETS"
+      stale = !self.fresh(2)
+      if self.severity(2, self.values[2]) > 0 lower = "LOW FUEL" color = 0xFF9D37 end
+    elif self.view == 2
+      blink = self.fresh(3) && self.values[3] < 1
+      if !blink || blink_on self.draw_cleaning(phase) end
+      upper = self.labels[3]
+      lower = "CLEAN IN"
+      stale = !self.fresh(3)
+      if self.values[3] == 0 lower = "DUE NOW" color = 0xFF9D37 end
+    elif self.view == 3
+      blink = self.fresh(4) && self.values[4] > 90
+      if !blink || blink_on self.draw_ash(phase) end
+      upper = self.labels[4]
+      lower = "ASH USED"
+      stale = !self.fresh(4)
+      if self.severity(4, self.values[4]) > 0 color = 0xFF9D37 end
+    elif self.view == 4
+      self.draw_error(phase)
+      upper = self.labels[5]
+      lower = self.fault() ? "CHECK IT" : "ALL OK"
+      stale = !self.fresh(5)
+      if self.fault() color = 0xFF6651 end
+    else
+      self.draw_temperature(phase)
+      upper = self.labels[6]
+      lower = self.labels[7]
+      stale = !self.fresh(6) && !self.fresh(7)
+    end
+    if stale lower = "STALE" color = 0x9AA3AD end
+    if blink color = 0xFF6651 end
+    if !blink || blink_on text(17, 6, upper, color) end
+    text(17, 14, lower, 0x70C7BB)
+    for page : 0 .. 5
+      if self.eligible(page) pixel(20 + page * 5, 15, page == self.view ? 0xC7EAF1 : 0x223C46) end
+    end
+    if self.fault() pixel(51, 0, phase % 4 < 2 ? 0xFF382B : 0x66201A) end
+  end
+end
+
+return PelletStove()

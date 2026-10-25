@@ -4,3 +4,9 @@
 /SolarApp/preview-*.json
 /SolarApp/animation-frames.json
 /PelletStove/tools/*-frames.json
+
+# Optional app-level diagnostic previews; publication media is built centrally.
+/PelletStove/preview.png
+/PelletStove/progress-preview.png
+/PelletStove/*-preview.gif
+/dist/media-*.zip

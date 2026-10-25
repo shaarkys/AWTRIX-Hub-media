@@ -17,7 +17,7 @@ except ImportError:  # Direct `python tools/validate_media.py` execution.
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ZIP_PATH = ROOT.parent / "AWTRIX-Hub-media.zip"
+ZIP_PATH = ROOT / "dist" / "AWTRIX-Hub-media.zip"
 FRAME_MS = 100
 
 
@@ -139,7 +139,10 @@ def check_manifest_sources() -> None:
     manifest_path = ROOT / "source-hashes.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     for entry in manifest["sources"]:
-        path = Path(entry["path"])
+        relative = Path(entry["path"])
+        if relative.is_absolute() or ".." in relative.parts:
+            fail(f"source path must stay inside this checkout: {relative}")
+        path = ROOT / relative
         actual = hashlib.sha256(path.read_bytes()).hexdigest()
         if actual != entry["sha256"]:
             fail(f"source changed after capture: {path} ({actual} != {entry['sha256']})")
@@ -151,6 +154,15 @@ def check_zip() -> int:
     forbidden = ("work/", "tools/", "captures/", "__pycache__/")
     with zipfile.ZipFile(ZIP_PATH) as archive:
         names = archive.namelist()
+        from package_media import publication_files
+        expected = publication_files()
+        if set(names) != set(expected) or len(names) != len(expected):
+            fail("package does not match the publication file list")
+        if archive.testzip() is not None:
+            fail("package CRC validation failed")
+        for name, path in expected.items():
+            if archive.read(name) != path.read_bytes():
+                fail(f"package member is out of date: {name}")
         if "README.md" not in names:
             fail("package has no README.md")
         if not any(name.startswith("SolarApp/") for name in names):

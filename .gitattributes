@@ -1,12 +1,16 @@
 * text=auto
-*.ax text eol=lf
+*.ax -text whitespace=cr-at-eol
 *.be text eol=lf
 *.inc text eol=lf
 *.py text eol=lf
+*.ps1 text eol=lf
 *.md text eol=lf
 *.json text eol=lf
+*.txt text eol=lf
 *.bdf -text
 **/FONT-LICENSE.txt -text
 *.png binary
 *.gif binary
 *.zip binary
+# Keep the original generator fragment's final separator line.
+SolarApp/graphics.be.inc whitespace=-blank-at-eof

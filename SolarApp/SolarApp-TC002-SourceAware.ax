@@ -1,0 +1,778 @@
+# @name    SolarApp
+# @desc    MQTT solar/yield, FVE battery, house load and grid import/export with rotating views
+# @version 4.3.1
+# @display 52x16
+# Local extension of SolarApp 4.3.1; original Hub identity intentionally omitted.
+# Local build: source-aware house activity (2026-10-23).
+# @config visual_style select "Visual Style" default=sun_large options=sun_large,sun_half
+# @config topic_power text "Power MQTT Topic" default="inverter/total/P_AC" group="MQTT topics"
+# @config topic_yield text "Daily Yield MQTT Topic" default="inverter/total/YieldDay" group="MQTT topics"
+# @config topic_consumption text "Consumption MQTT Topic" default="house/total/power" group="MQTT topics"
+# @config topic_battery_soc text "FVE Battery Capacity MQTT Topic (%)" default="" group="MQTT topics" help="Empty disables the battery view. State of charge, 0-100 percent."
+# @config topic_battery_power text "FVE Battery Power MQTT Topic (W)" default="" group="MQTT topics" help="Optional signed charge/discharge power."
+# @config topic_grid_power text "Grid Power MQTT Topic (W)" default="" group="MQTT topics" help="Signed net power: import and export. Empty disables the grid view."
+# @config default_view select "Starting View" default=yield options=yield,consumption,battery,grid
+# @config rotate_seconds number "Seconds per View" default=5 min=2 max=60
+# @config max_power number "Max Solar Power (W)" default=800 min=100
+# @config anim_speed number "Animation Speed (1-10)" default=4 min=1 max=10
+# @config yield_unit select "Yield Display Unit" default=auto options=auto,kWh,Wh
+# @config yield_input_unit select "MQTT Yield Input Unit" default=Wh options=Wh,kWh group="Input interpretation"
+# @config grid_sign select "Grid Sign Convention" default=import_positive options=import_positive,export_positive group="Input interpretation"
+# @config battery_sign select "Battery Sign Convention" default=charge_positive options=charge_positive,discharge_positive group="Input interpretation"
+# @config solar_threshold number "Solar Production Threshold (W)" default=1 min=0 max=1000 group="Rotation" help="Show solar only when fresh production is above this value."
+# @config grid_deadband number "Grid Idle Threshold (W)" default=10 min=0 max=1000 group="Rotation"
+# @config battery_deadband number "Battery Idle Threshold (W)" default=10 min=0 max=1000 group="Rotation"
+# @config data_timeout number "Live Data Timeout (seconds)" default=120 min=0 max=3600 group="Rotation" help="0 disables expiry. Yield has a separate timeout."
+# @config yield_timeout number "Daily Yield Timeout (seconds)" default=3600 min=0 max=86400 group="Rotation" help="0 disables expiry. Prevents showing an old daily total indefinitely."
+# @config show_solar bool "Show Solar View" default=true group="Rotation"
+# @config show_battery bool "Show Battery View" default=true group="Rotation"
+# @config show_house bool "Show House View" default=true group="Rotation"
+# @config show_grid bool "Show Grid View" default=true group="Rotation"
+# @config field_power text "Solar JSON Field" default="" group="Optional JSON fields" help="Top-level key; empty uses known aliases. Numeric MQTT payloads need no key."
+# @config field_yield text "Yield JSON Field" default="" group="Optional JSON fields"
+# @config field_consumption text "House JSON Field" default="" group="Optional JSON fields" help="Must be actual house load, not a signed net grid reading."
+# @config field_battery_soc text "Battery Capacity JSON Field" default="" group="Optional JSON fields"
+# @config field_battery_power text "Battery Power JSON Field" default="" group="Optional JSON fields"
+# @config field_grid_power text "Grid Power JSON Field" default="" group="Optional JSON fields"
+
+import math
+import json
+
+class SolarApp
+  var cfg_style, cfg_max_power, cfg_speed, cfg_yield_unit
+  var topics, fields, aliases, values, updated, bad_input, labels, last_source_status
+  var enabled, view, view_started, rotate_ms, timeout_ms, yield_timeout_ms
+  var solar_threshold, grid_deadband, battery_deadband
+  var grid_multiplier, battery_multiplier, yield_multiplier
+  var smooth_power, smooth_ratio, sun_rot, anim_phase
+  var sun_large_pixels, sun_half_pixels, solar_particles
+
+  def init()
+    self.cfg_style = store.get("visual_style", "sun_large")
+    self.cfg_max_power = max(100, num(store.get("max_power"), 800))
+    self.cfg_speed = clamp(num(store.get("anim_speed"), 4), 1, 10)
+    self.cfg_yield_unit = store.get("yield_unit", "auto")
+    self.rotate_ms = int(clamp(num(store.get("rotate_seconds"), 5), 2, 60)) * 1000
+    self.timeout_ms = int(clamp(num(store.get("data_timeout"), 120), 0, 3600)) * 1000
+    self.yield_timeout_ms = int(clamp(num(store.get("yield_timeout"), 3600), 0, 86400)) * 1000
+    self.solar_threshold = max(0, num(store.get("solar_threshold"), 1))
+    self.grid_deadband = max(0, num(store.get("grid_deadband"), 10))
+    self.battery_deadband = max(0, num(store.get("battery_deadband"), 10))
+    self.grid_multiplier = store.get("grid_sign") == "export_positive" ? -1 : 1
+    self.battery_multiplier = store.get("battery_sign") == "discharge_positive" ? -1 : 1
+    self.yield_multiplier = store.get("yield_input_unit") == "kWh" ? 1000.0 : 1.0
+    self.topics = [store.get("topic_power", "inverter/total/P_AC"),
+                   store.get("topic_yield", "inverter/total/YieldDay"),
+                   store.get("topic_consumption", "house/total/power"),
+                   store.get("topic_battery_soc", ""),
+                   store.get("topic_battery_power", ""),
+                   store.get("topic_grid_power", "")]
+    self.fields = [store.get("field_power", ""), store.get("field_yield", ""),
+                   store.get("field_consumption", ""), store.get("field_battery_soc", ""),
+                   store.get("field_battery_power", ""), store.get("field_grid_power", "")]
+    self.aliases = [
+      ["production", "Production", "P_AC", "power", "Power", "solar_power", "solar_production", "P_PV", "p_ac", "val", "value", "p", "P"],
+      ["YieldDay", "yield", "Yield", "production", "Production", "daily_production", "today_production", "energy_today", "yield_day", "val", "value", "energy", "Energy", "y", "E_Day"],
+      ["consumption", "Consumption", "house_power", "load", "Load", "P_Load", "p_load", "total_power", "act_power", "apower", "power", "Power", "val", "value", "p", "P"],
+      ["soc", "SOC", "battery_soc", "battery_pct", "battery_percent", "capacity", "percentage", "val", "value"],
+      ["battery_power", "battery_w", "P_Bat", "p_bat", "power", "Power", "val", "value"],
+      ["grid_power", "grid_w", "P_Grid", "p_grid", "net_power", "power", "Power", "val", "value"]
+    ]
+    self.values = [nil, nil, nil, nil, nil, nil]
+    self.labels = ["--", "--", "--", "--", "BAT", "--"]
+    self.updated = [nil, nil, nil, nil, nil, nil]
+    self.bad_input = [false, false, false, false, false, false]
+    self.last_source_status = nil
+    self.enabled = [store.get("show_solar", true), store.get("show_battery", true),
+                    store.get("show_house", true), store.get("show_grid", true)]
+    self.view = 0
+    var first = store.get("default_view", "yield")
+    if first == "battery" self.view = 1 end
+    if first == "consumption" self.view = 2 end
+    if first == "grid" self.view = 3 end
+    self.view_started = now_ms()
+    self.smooth_power = 0.0
+    self.smooth_ratio = 0.0
+    self.sun_rot = 0.0
+    self.anim_phase = 0.0
+
+    # Sonnenpartikel (x, y_base, speed, phase, color)
+    self.solar_particles = [
+      [17.4, 7.0, 0.23, 0.0, 0xC2410C],
+      [27.8, 3.5, 0.20, 1.5, 0xB45309],
+      [38.2, 8.0, 0.25, 3.2, 0x9A3412],
+      [23.5, 11.5, 0.19, 4.8, 0x92400E]
+    ]
+
+    # Basis-Sprite der 16x16 Sonne
+    var base_sun_16 = [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0x0F0600, 0x0F0600, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0x0F0600, 0x210D01, 0x4F2003, 0x4F2003, 0x210D01, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0x190A01, 0x3D1802, 0x361602, 0x361602, 0x9A3E07, 0x9A3E07, 0x361602, 0x361602, 0x3D1802, 0x190A01, 0, 0, 0],
+      [0, 0, 0, 0x3D1802, 0x893706, 0x933B07, 0xEC4E03, 0xF35B01, 0xF35B01, 0xEC4E03, 0x933B07, 0x893706, 0x3D1802, 0, 0, 0],
+      [0, 0, 0, 0x361602, 0x933B07, 0xF35B01, 0xFF7502, 0xFF8105, 0xFF8105, 0xFF7502, 0xF35B01, 0x933B07, 0x361602, 0x0F0600, 0, 0],
+      [0, 0, 0x210D01, 0x361602, 0xEC4E03, 0xFF7502, 0xFF8F09, 0xFFA10E, 0xFFA10E, 0xFF8F09, 0xFF7502, 0xEC4E03, 0x361602, 0x210D01, 0, 0],
+      [0, 0x0F0600, 0x4F2003, 0x9A3E07, 0xF35B01, 0xFF8105, 0xFFA10E, 0xFEC940, 0xFEC940, 0xFFA10E, 0xFF8105, 0xF35B01, 0x9A3E07, 0x4F2003, 0x0F0600, 0],
+      [0, 0x0F0600, 0x4F2003, 0x9A3E07, 0xF35B01, 0xFF8105, 0xFFA10E, 0xFEC940, 0xFEC940, 0xFFA10E, 0xFF8105, 0xF35B01, 0x9A3E07, 0x4F2003, 0x0F0600, 0],
+      [0, 0, 0x210D01, 0x361602, 0xEC4E03, 0xFF7502, 0xFF8F09, 0xFFA10E, 0xFFA10E, 0xFF8F09, 0xFF7502, 0xEC4E03, 0x361602, 0x210D01, 0, 0],
+      [0, 0, 0, 0x361602, 0x933B07, 0xF35B01, 0xFF7502, 0xFF8105, 0xFF8105, 0xFF7502, 0xF35B01, 0x933B07, 0x361602, 0x0F0600, 0, 0],
+      [0, 0, 0, 0x3D1802, 0x893706, 0x933B07, 0xEC4E03, 0xF35B01, 0xF35B01, 0xEC4E03, 0x933B07, 0x893706, 0x3D1802, 0, 0, 0],
+      [0, 0, 0, 0x190A01, 0x3D1802, 0x361602, 0x361602, 0x9A3E07, 0x9A3E07, 0x361602, 0x361602, 0x3D1802, 0x190A01, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0x0F0600, 0x210D01, 0x4F2003, 0x4F2003, 0x210D01, 0x0F0600, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0x0F0600, 0x0F0600, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]
+
+    # Vorberechnung für 16x16 Sonne (cx=7.5, cy=7.5, R=4.2)
+    self.sun_large_pixels = []
+    var cx16 = 7.5
+    var cy16 = 7.5
+    var R16 = 4.2
+    for y: 0 .. 15
+      var dy = real(y) - cy16
+      for x: 0 .. 15
+        var base_col = base_sun_16[y][x]
+        if base_col != 0
+          var dx = real(x) - cx16
+          var d2 = dx * dx + dy * dy
+          var r = math.sqrt(d2)
+          if r <= R16
+            var z2 = (R16 * R16) - d2
+            if z2 < 0.001 z2 = 0.001 end
+            var z = math.sqrt(z2)
+            var lon = math.atan(dx / (z + 0.001))
+            var lat = dy / R16
+            var limb = z / R16
+            self.sun_large_pixels.push([x, y, 1, lon, lat, limb, base_col, 0.0])
+          else
+            var angle = math.atan(dy / (dx + 0.0001))
+            self.sun_large_pixels.push([x, y, 0, 0.0, 0.0, 0.0, base_col, angle])
+          end
+        end
+      end
+    end
+
+    # Vorberechnung für halbe Riesensonne links (cx=-1.0, cy=7.5, S=1.7)
+    self.sun_half_pixels = []
+    var S_half = 1.7
+    var cx_half = -1.0
+    var cy_half = 7.5
+    var R_core_half = 4.2 * S_half
+    for y: 0 .. 15
+      var dy = real(y) - cy_half
+      for x: 0 .. 12
+        var dx = real(x) - cx_half
+        var sx_int = int(7.5 + dx / S_half + 0.5)
+        var sy_int = int(7.5 + dy / S_half + 0.5)
+        var base_col = 0
+        if sx_int >= 0 && sx_int < 16 && sy_int >= 0 && sy_int < 16
+          base_col = base_sun_16[sy_int][sx_int]
+        end
+
+        if base_col != 0
+          var d2 = dx * dx + dy * dy
+          var r = math.sqrt(d2)
+          if r <= R_core_half
+            var z2 = (R_core_half * R_core_half) - d2
+            if z2 < 0.001 z2 = 0.001 end
+            var z = math.sqrt(z2)
+            var lon = math.atan(dx / (z + 0.001))
+            var lat = dy / R_core_half
+            var limb = z / R_core_half
+            self.sun_half_pixels.push([x, y, 1, lon, lat, limb, base_col, 0.0])
+          else
+            var angle = math.atan(dy / (dx + 0.0001))
+            self.sun_half_pixels.push([x, y, 0, 0.0, 0.0, 0.0, base_col, angle])
+          end
+        end
+      end
+    end
+  end
+
+  def setup()
+    # One subscription per distinct filter; shared JSON topics feed all matching inputs.
+    var subscribed = []
+    for topic_filter : self.topics
+      if size(topic_filter) == 0 continue end
+      var found = false
+      for existing : subscribed
+        if existing == topic_filter found = true end
+      end
+      if !found
+        self.subscribe_topic(topic_filter)
+        subscribed.push(topic_filter)
+      end
+    end
+  end
+
+  def subscribe_topic(topic_filter)
+    mqtt.subscribe(topic_filter, / topic, payload -> self.on_mqtt(topic_filter, payload))
+  end
+
+  def numeric(value)
+    var kind = type(value)
+    if kind != "int" && kind != "real" && kind != "string" return nil end
+    var result = num(value)
+    # Reject NaN, infinity and values too large for meaningful display arithmetic.
+    if result == nil return nil end
+    if !(result >= -1000000000.0 && result <= 1000000000.0) return nil end
+    return real(result)
+  end
+
+  def read_value(body, index)
+    if !isinstance(body, map) return self.numeric(body) end
+    if size(self.fields[index]) > 0
+      return self.numeric(body.find(self.fields[index]))
+    end
+    for key : self.aliases[index]
+      var value = body.find(key)
+      if value != nil return self.numeric(value) end
+    end
+    return nil
+  end
+
+  def on_mqtt(topic_filter, payload)
+    var body = self.numeric(payload)
+    if body == nil
+      try
+        body = json.load(payload)
+      except ..
+        body = nil
+      end
+    end
+    for index : 0 .. 5
+      if self.topics[index] != topic_filter continue end
+      var value = self.read_value(body, index)
+      if value != nil && index == 3
+        if value < 0 || value > 100 value = nil end
+      end
+      if value == nil
+        if !self.bad_input[index]
+          log("SolarApp: invalid/missing numeric input " + str(index) + "; check MQTT field and units")
+          self.bad_input[index] = true
+        end
+        continue
+      end
+      if self.bad_input[index]
+        log("SolarApp: input " + str(index) + " recovered")
+        self.bad_input[index] = false
+      end
+      if index <= 2 && value < 0 value = 0.0 end
+      if index == 1 value *= self.yield_multiplier end
+      if index == 4 value *= self.battery_multiplier end
+      if index == 5 value *= self.grid_multiplier end
+      self.values[index] = value
+      self.updated[index] = now_ms()
+    end
+    self.refresh_labels()
+  end
+
+  def loop()
+    # Forget expired values so an uptime-counter wrap cannot revive old readings.
+    for index : 0 .. 5
+      if self.values[index] != nil && !self.fresh(index)
+        self.values[index] = nil
+        self.updated[index] = nil
+      end
+    end
+    self.refresh_labels()
+  end
+
+  def refresh_labels()
+    # Build strings on input changes and in loop(), never at frame rate.
+    for index : [0, 2, 5]
+      self.labels[index] = self.fresh(index) ? self.power_label(self.values[index]) : "--"
+    end
+    self.labels[1] = self.yield_label()
+    self.labels[3] = self.fresh(3) ? str(int(self.values[3] + 0.5)) + "%" : "--"
+    self.labels[4] = size(self.topics[4]) == 0 ? "BAT" : "--"
+    if self.fresh(4)
+      var watt = self.values[4]
+      self.labels[4] = "IDLE"
+      if math.abs(watt) > self.battery_deadband
+        self.labels[4] = (watt > 0 ? "+" : "-") + self.power_label(watt)
+      end
+    end
+    self.report_source_status()
+  end
+
+  def age(stamp)
+    # Safe across the signed 32-bit millisecond boundary for these short intervals.
+    return (now_ms() - stamp) & 0x7FFFFFFF
+  end
+
+  def fresh(index)
+    if self.values[index] == nil || self.updated[index] == nil return false end
+    var limit = index == 1 ? self.yield_timeout_ms : self.timeout_ms
+    return limit == 0 || self.age(self.updated[index]) <= limit
+  end
+
+  def eligible(page)
+    if !self.enabled[page] return false end
+    if page == 0
+      return self.fresh(0) && self.values[0] > self.solar_threshold
+    elif page == 1
+      return self.fresh(3)
+    elif page == 2
+      return self.fresh(2)
+    end
+    return self.fresh(5)
+  end
+
+  def view_count()
+    var count = 0
+    for page : 0 .. 3
+      if self.eligible(page) count += 1 end
+    end
+    return count
+  end
+
+  def next_view()
+    for offset : 1 .. 4
+      var page = (self.view + offset) % 4
+      if self.eligible(page)
+        self.view = page
+        self.view_started = now_ms()
+        return
+      end
+    end
+    self.view_started = now_ms()
+  end
+
+  def on_show()
+    self.view_started = now_ms()
+    if !self.eligible(self.view) self.next_view() end
+  end
+
+  def duration()
+    # Keep this app visible long enough to show one full cycle alongside other apps.
+    return self.rotate_ms * max(1, self.view_count()) + 1000
+  end
+
+  def on_button(btn)
+    if btn != "select" return false end
+    self.next_view()
+    return true
+  end
+
+  def power_label(value)
+    var amount = math.abs(value)
+    if amount < 1000 return str(int(amount + 0.5)) + "W" end
+    if amount < 1000000 return format("%.1fkW", amount / 1000.0) end
+    return format("%.1fMW", amount / 1000000.0)
+  end
+
+  def yield_label()
+    if !self.fresh(1) return "--" end
+    var wh = self.values[1]
+    if self.cfg_yield_unit == "Wh" || (self.cfg_yield_unit == "auto" && wh < 1000)
+      return format("%.0fWh", wh)
+    end
+    return format("%.1fkWh", wh / 1000.0)
+  end
+
+  def label(x, y, value, color, room)
+    # Fit wide numbers in the text region instead of painting over the icons.
+    if text_width(value) <= room
+      text(x, y, value, color)
+    else
+      text(x, y, "OVR", color)
+    end
+  end
+
+  def draw_energy(direction, color, watt)
+    if direction == 0 return end
+    var strength = clamp(math.abs(watt) / real(self.cfg_max_power), 0.0, 1.0)
+    var travel = self.anim_phase * (1.3 + strength * 2.0)
+    # Two quiet lanes between the text rows keep the readings unobscured.
+    for packet : 0 .. 3
+      var offset = (travel + packet * 7.1) % 28.0
+      var head = direction > 0 ? 16.0 + offset : 44.0 - offset
+      var y = packet % 2 == 0 ? 7 : 15
+      for tail : 0 .. 3
+        var x = int(head) - direction * tail
+        if x >= 15 && x <= 44
+          var glow = (4.0 - tail) / 4.0
+          pixel(x, y, self.blend_color(0x000000, color, glow * glow * 0.75))
+        end
+      end
+    end
+  end
+
+  def draw_battery(color)
+    # Bevelled case, shaded glass and individually lit cells.
+    rect_fill(4, 0, 7, 2, 0x263746)
+    rect_fill(5, 0, 5, 1, 0xC4DBE2)
+    rect_fill(1, 3, 13, 11, 0x13242E)
+    rect_fill(2, 2, 11, 13, 0x375260)
+    rect_fill(3, 3, 9, 11, 0x071A23)
+    line(2, 3, 2, 13, 0x9FBFC8)
+    line(3, 2, 11, 2, 0xCEE2E4)
+    line(3, 14, 12, 14, 0x1A313C)
+    line(13, 4, 13, 12, 0x0B141C)
+    var fill = int(self.values[3] * 10.0 / 100.0 + 0.5)
+    var direction = 0
+    if self.fresh(4) && math.abs(self.values[4]) > self.battery_deadband
+      direction = self.values[4] > 0 ? -1 : 1
+    end
+    for row : 0 .. 9
+      var y = 13 - row
+      for x : 4 .. 10
+        var col = 0x102B34
+        if row < fill
+          var shine = 0.60 + 0.25 * math.sin(real(x - 3) * 0.5)
+          if row == 2 || row == 5 || row == 8 shine *= 0.55 end
+          if direction != 0
+            var phase = real(row) * 0.8 + real(direction) * self.anim_phase * 2.0
+            shine += max(0.0, math.sin(phase)) * 0.15
+          end
+          col = self.blend_color(0x000000, color, clamp(shine, 0.0, 1.0))
+          if x == 4 col = self.blend_color(col, 0xD8FFF0, 0.22) end
+        end
+        pixel(x, y, col)
+      end
+    end
+    pixel(3, 3, 0xECFAFA)
+    pixel(3, 4, 0x759FA9)
+    pixel(11, 13, self.blend_color(0x13242E, color, 0.20))
+  end
+
+  def draw_house(color)
+    # Original right-edge house: chimney, sloping roof, shaded walls and warm windows.
+    var roof_col = color
+    var wall_col = self.blend_color(0x101A24, color, 0.13)
+    var edge_col = self.blend_color(0x263238, color, 0.24)
+    pixel(50, 1, 0x546E7A)
+    pixel(50, 2, 0x455A64)
+    for dy : 0 .. 4
+      var py = 3 + dy
+      var start_x = 49 - dy
+      for px : start_x .. 51
+        var is_top = px == start_x || py == 3
+        pixel(px, py, is_top ? roof_col : self.blend_color(wall_col, roof_col, 0.35))
+      end
+    end
+    for py : 8 .. 14
+      for px : 46 .. 51
+        pixel(px, py, px == 46 || py == 14 ? edge_col : wall_col)
+      end
+    end
+    var pulse_top = 0.5 + 0.35 * math.sin(self.anim_phase * 2.8) + 0.15 * math.sin(self.anim_phase * 6.4 + 1.2)
+    var pulse_bot = 0.5 + 0.35 * math.cos(self.anim_phase * 2.5 + 2.1)
+    var top = self.blend_color(0xE67E08, 0xFFF0A0, pulse_top)
+    var bot = self.blend_color(0xC66906, 0xFFD46D, pulse_bot)
+    for x : 48 .. 49
+      pixel(x, 8, top)
+      pixel(x, 9, self.blend_color(top, 0xFFF8CF, 0.22))
+      pixel(x, 11, bot)
+      pixel(x, 12, self.blend_color(bot, 0xFFF1B2, 0.18))
+    end
+  end
+
+  def draw_grid(color)
+    # Filled steel pylon with a lit edge, dark lattice and glowing insulators.
+    for y : 1 .. 14
+      var spread = int(real(y - 1) * 0.36)
+      for x : 7 - spread .. 7 + spread
+        var edge = x == 7 - spread || x == 7 + spread
+        var col = edge ? 0x91AAB7 : 0x1A2A39
+        if !edge && (x + y) % 4 == 0 col = 0x425D6F end
+        if edge && x <= 7 col = self.blend_color(col, color, 0.32) end
+        pixel(x, y, col)
+      end
+    end
+    line(2, 5, 12, 5, 0x7E9EAB)
+    line(0, 8, 14, 8, 0x506C7C)
+    line(2, 15, 12, 15, 0x273B48)
+    var pulse = 0.60 + 0.40 * math.sin(self.anim_phase * 1.5)
+    var live = self.blend_color(0x102C3E, color, pulse)
+    for index : 0 .. 3
+      var x = index < 2 ? 1 + index * 3 : 4 + index * 3
+      pixel(x, 9, live)
+      pixel(x, 10, self.blend_color(live, 0xECF8FF, 0.45))
+    end
+  end
+
+  def source_mode()
+    # Choose a measured active source without treating solar-minus-load as grid power.
+    if self.fresh(0) && self.values[0] > self.solar_threshold
+      return 1
+    elif self.fresh(3) && self.fresh(4) && self.values[4] < -self.battery_deadband
+      return 2
+    elif self.fresh(5) && self.values[5] > self.grid_deadband
+      return 3
+    end
+    return 0
+  end
+
+  def report_source_status()
+    if !self.fresh(2) || self.values[2] <= 0 return end
+    var mode = self.source_mode()
+    var solar_state = self.fresh(0) ? "zero/below threshold" : "missing or expired"
+    var status = str(mode) + (mode == 0 ? solar_state : "")
+    if status == self.last_source_status return end
+    self.last_source_status = status
+    if mode == 0
+      log("SolarApp: house load active; source unknown; solar " + solar_state + "; no measured battery discharge or grid import")
+    elif mode == 1
+      log("SolarApp: house illustration using measured solar production")
+    elif mode == 2
+      log("SolarApp: house illustration using measured battery discharge")
+    else
+      log("SolarApp: house illustration using measured grid import")
+    end
+  end
+
+  def draw_load_activity()
+    # A generic electricity symbol represents known load when its source is unknown.
+    var active = self.values[2] > 0
+    var pulse = active ? 0.55 + 0.45 * math.sin(self.anim_phase * 1.4) : 0.0
+    for y : 1 .. 14
+      for x : 0 .. 14
+        var dx = real(x - 7) / 7.0
+        var dy = real(y - 8) / 7.0
+        var halo = max(0.0, 1.0 - dx * dx - dy * dy)
+        pixel(x, y, self.blend_color(0x000000, 0x164859, halo * (0.25 + pulse * 0.35)))
+      end
+    end
+    var glow = self.blend_color(0x486573, 0xFFE3A0, active ? 0.70 + pulse * 0.30 : 0.0)
+    for y : 1 .. 7
+      var start = 8 - int(real(y - 1) * 0.7)
+      var finish = 11 - int(real(y - 1) * 0.45)
+      rect_fill(start, y, finish - start + 1, 1, glow)
+      pixel(finish, y, self.blend_color(glow, 0x9E671C, active ? 0.3 : 0.0))
+    end
+    for y : 8 .. 14
+      var start = 8 - int(real(y - 8) * 0.5)
+      var finish = 12 - (y - 8)
+      rect_fill(start, y, finish - start + 1, 1, glow)
+      pixel(finish, y, self.blend_color(glow, 0x9E671C, active ? 0.3 : 0.0))
+    end
+    line(8, 1, 4, 7, active ? 0xFFF4CE : 0x76909B)
+    if active
+      # Non-directional sparks convey activity, without asserting a source or flow.
+      var orbit = self.anim_phase * 0.8
+      pixel(int(7.0 + 6.0 * math.cos(orbit)), int(8.0 + 6.0 * math.sin(orbit)), 0x7DD8DF)
+      pixel(int(7.0 - 6.0 * math.cos(orbit)), int(8.0 - 6.0 * math.sin(orbit)), 0x397A8A)
+    end
+  end
+
+  def draw_source()
+    var mode = self.source_mode()
+    if mode == 1
+      self.advance_sun()
+      self.draw_sun(true)
+      return 0xE68D26
+    elif mode == 2
+      self.draw_battery(0x31D4A0)
+      return 0x31D4A0
+    elif mode == 3
+      self.draw_grid(0xFFA236)
+      return 0xFFA236
+    end
+    self.draw_load_activity()
+    return 0
+  end
+
+  def advance_sun()
+    self.smooth_power += (self.values[0] - self.smooth_power) * 0.15
+    var ratio = clamp(self.smooth_power / real(self.cfg_max_power), 0.0, 1.0)
+    self.smooth_ratio += (ratio - self.smooth_ratio) * 0.10
+    self.sun_rot += (0.04 + 0.18 * self.smooth_ratio) * real(self.cfg_speed) * 0.25
+  end
+
+  def draw()
+    clear()
+    font("small")
+    if !self.eligible(self.view)
+      self.next_view()
+    elif self.age(self.view_started) >= self.rotate_ms
+      self.next_view()
+    end
+    if !self.eligible(self.view)
+      text(1, 6, "NO DATA", 0x9E9E9E)
+      text(1, 14, "MQTT", 0x607D8B)
+      return
+    end
+    self.anim_phase += real(self.cfg_speed) * 0.05
+    if self.view == 0
+      self.draw_solar()
+    elif self.view == 1
+      var color = self.values[3] <= 20 ? 0xFF6548 : 0x39E5A7
+      var direction = 0
+      if self.fresh(4) && math.abs(self.values[4]) > self.battery_deadband
+        direction = self.values[4] > 0 ? -1 : 1
+      end
+      self.draw_battery(color)
+      self.draw_house(0x4FBAA8)
+      if direction != 0 self.draw_energy(direction, color, self.values[4]) end
+      self.label(17, 6, self.labels[3], color, 28)
+      var detail = size(self.topics[4]) == 0 ? "BAT" : (self.fresh(4) ? self.labels[4] : "--")
+      self.label(17, 14, detail, 0xB8D8D0, 28)
+    elif self.view == 2
+      var source_color = self.draw_source()
+      self.draw_house(0x63BFA7)
+      if source_color != 0 && self.values[2] > 0
+        self.draw_energy(1, source_color, self.values[2])
+      end
+      self.label(17, 6, self.labels[2], 0xFFE3B0, 28)
+      text(17, 14, "LOAD", 0x63BFA7)
+    else
+      var watt = self.values[5]
+      var direction = math.abs(watt) <= self.grid_deadband ? 0 : (watt > 0 ? 1 : -1)
+      var color = direction > 0 ? 0xFF9100 : (direction < 0 ? 0x00E676 : 0x90A4AE)
+      self.draw_grid(color)
+      self.draw_house(color)
+      self.draw_energy(direction, color, watt)
+      self.label(17, 6, self.labels[5], color, 28)
+      text(17, 14, direction > 0 ? "IMPORT" : (direction < 0 ? "EXPORT" : "IDLE"), color)
+    end
+  end
+
+  def draw_sun(is_producing)
+    var C_YELLOW = 0xFEC940
+    var C_AMBER = 0xFFA10E
+    var C_WARM_O = 0xFF8105
+    var C_FIRE_O = 0xFF7502
+    var C_DEEP_O = 0xEC4E03
+    var C_LOBE_A = 0x9A3E07
+    var sun_list = (self.cfg_style == "sun_half") ? self.sun_half_pixels : self.sun_large_pixels
+    for p: sun_list
+      var px = p[0]
+      var py = p[1]
+      var is_core = p[2]
+      var base_col = p[6]
+      var col = 0
+
+      if is_producing
+        if is_core == 1
+          var lon = p[3]
+          var lat = p[4]
+          var limb = p[5]
+          var phi = lon - self.sun_rot
+          var surf = 0.65 * math.sin(2.0 * phi) * math.cos(lat * 1.8) + 0.35 * math.sin(3.5 * phi + lat)
+          var brightness = limb * 0.75 + surf * 0.25
+
+          if brightness > 0.65
+            col = self.blend_color(C_AMBER, C_YELLOW, (brightness - 0.65) / 0.35)
+          elif brightness > 0.45
+            col = self.blend_color(C_WARM_O, C_AMBER, (brightness - 0.45) / 0.20)
+          elif brightness > 0.25
+            col = self.blend_color(C_FIRE_O, C_WARM_O, (brightness - 0.25) / 0.20)
+          elif brightness > 0.10
+            col = self.blend_color(C_DEEP_O, C_FIRE_O, (brightness - 0.10) / 0.15)
+          else
+            col = self.blend_color(C_LOBE_A, C_DEEP_O, brightness / 0.10)
+          end
+        else
+          var angle = p[7]
+          var pulse = 0.5 + 0.5 * math.sin(self.anim_phase * 2.0 + math.cos(8.0 * angle) * 0.7)
+          col = self.blend_color(base_col, C_FIRE_O, pulse * 0.30 * self.smooth_ratio)
+        end
+      else
+        if is_core == 1
+          col = self.blend_color(0x361602, 0x4F2003, p[5])
+        else
+          col = self.blend_color(0x000000, base_col, 0.4)
+        end
+      end
+      pixel(px, py, col)
+    end
+
+  end
+
+  def blend_color(c1, c2, t)
+    if t <= 0.0 return c1 end
+    if t >= 1.0 return c2 end
+    var r1 = (c1 >> 16) & 0xFF
+    var g1 = (c1 >> 8) & 0xFF
+    var b1 = c1 & 0xFF
+    var r2 = (c2 >> 16) & 0xFF
+    var g2 = (c2 >> 8) & 0xFF
+    var b2 = c2 & 0xFF
+    var r = int(real(r1) + real(r2 - r1) * t)
+    var g = int(real(g1) + real(g2 - g1) * t)
+    var b = int(real(b1) + real(b2 - b1) * t)
+    if r < 0 r = 0 end
+    if g < 0 g = 0 end
+    if b < 0 b = 0 end
+    if r > 255 r = 255 end
+    if g > 255 g = 255 end
+    if b > 255 b = 255 end
+    return (r << 16) | (g << 8) | b
+  end
+
+  def draw_solar()
+    self.advance_sun()
+    var is_producing = true
+    var speed_mult = real(self.cfg_speed) * 0.25
+    self.draw_sun(true)
+    # === YIELD-MODUS: SOLARPANEL & SONNENPARTIKEL ===
+    for py: 1 .. 14
+      for px: 48 .. 51
+        var is_frame = (py == 1 || py == 14 || px == 48)
+        var is_busbar = (py == 5 || py == 9 || py == 13)
+        var p_col = 0
+
+        if is_producing
+          if is_frame
+            p_col = 0x00E5FF
+          elif is_busbar
+            p_col = 0x00B0FF
+          else
+            p_col = 0x0D47A1
+          end
+
+          var shimmer = math.sin(self.anim_phase * 0.45 + real(px - 48) * 0.5 - real(py) * 0.35)
+          if shimmer > 0.25 && !is_frame
+            p_col = self.blend_color(p_col, 0x80D8FF, (shimmer - 0.25) * 0.7)
+          elif is_frame && shimmer > 0.60
+            p_col = self.blend_color(p_col, 0xFFFFFF, (shimmer - 0.60) * 0.6)
+          end
+        else
+          p_col = is_frame ? 0x1A237E : 0x0A192F
+        end
+        pixel(px, py, p_col)
+      end
+    end
+
+    if is_producing
+      var p_speed_mult = speed_mult * (0.70 + 1.80 * self.smooth_ratio)
+      for p: self.solar_particles
+        p[0] = p[0] + p[2] * p_speed_mult
+        if p[0] >= 48.0
+          p[0] = 11.0 + real(int(p[3]) % 3)
+          p[1] = 3.5 + real(int(p[1] + 2.5) % 8)
+        end
+
+        var py = int(p[1] + 0.35 * math.sin(p[0] * 0.15 + p[3]) + 0.5)
+        if py >= 0 && py < 16
+          var ix_head = int(p[0])
+          for i: 0 .. 4
+            var cur_x = ix_head + 1 - i
+            if cur_x >= 11 && cur_x < 48
+              var dist = p[0] - real(cur_x)
+              var w = 0.0
+              if dist >= 0.0 && dist <= 2.8
+                var f = 1.0 - dist / 2.8
+                w = f * f
+              elif dist < 0.0 && dist > -0.6
+                w = 1.0 + dist * 1.6
+              end
+              var eff_w = w * 0.60
+              if eff_w >= 0.03
+                pixel(cur_x, py, self.blend_color(0x000000, p[4], eff_w))
+              end
+            end
+          end
+        end
+      end
+    end
+    var text_x = self.cfg_style == "sun_half" ? 15 : 17
+    self.label(text_x, 6, self.labels[0], 0xFFC107, 47 - text_x)
+    self.label(text_x, 14, self.fresh(1) ? self.labels[1] : "--", 0x00E676, 47 - text_x)
+  end
+end
+
+return SolarApp()

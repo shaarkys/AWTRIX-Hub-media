@@ -1,0 +1,11 @@
+{
+  "onoff": true,
+  "stove_mode": "heating",
+  "stove_status": true,
+  "measure_temperature": 21.4,
+  "target_temperature": 22,
+  "stove_pellets_actual": 8.4,
+  "measure_stove_cleaning_in": 32.5,
+  "measure_stove_maintenance_in": 45,
+  "stove_error_state": false
+}

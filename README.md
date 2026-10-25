@@ -1,59 +1,56 @@
-# AWTRIX Hub publication media
+# AWTRIX NG apps and Hub media
 
-This folder contains clean upload-ready PNG screenshots and animated GIF previews for the SolarApp and PelletStove AWTRIX NG scripts.
+Standalone MQTT display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels**. This repository is the single working location for the scripts, configuration guides, source generators, tests, and publication media.
 
-## Important disclosure
+| App | Installable script | Configure | Screenshots | Animation |
+| --- | --- | --- | --- | --- |
+| SolarApp | [SolarApp.ax](SolarApp/SolarApp.ax) | [Guide](SolarApp/README.md) | [Gallery](SolarApp/gallery-contact-sheet.png) | [Rotation GIF](SolarApp/solarapp-showcase.gif) |
+| PelletStove | [PelletStove.ax](PelletStove/PelletStove.ax) | [Guide](PelletStove/README.md) | [Gallery](PelletStove/gallery-contact-sheet.png) | [Rotation GIF](PelletStove/pelletstove-showcase.gif) |
 
-Every panel image in this package is a **SIMULATED RENDERED PREVIEW**. It was produced by executing the copied Berry 1.1 scripts with mocked AWTRIX drawing, MQTT, and time APIs, then rasterizing the captured draw calls. These files are not photographs, screen recordings, or proof of rendering on a physical TC002. No live MQTT broker, Homey instance, AWTRIX device, brightness setting, or device firmware was used.
+**SolarApp** rotates through solar production/yield, battery charge, measured house load, and signed grid import/export. Solar is skipped when production is zero or stale. The house source graphic is illustrative; it does not calculate an energy split.
 
-Contact sheets are explicitly labeled `RENDERED PREVIEW`. Individual upload frames are intentionally clean and contain no watermark; keep this disclosure in the Hub description or caption.
+**PelletStove** rotates through stove mode/status, current/target temperatures, pellets, cleaning, ash usage, and errors. It includes cooling-fan and microfiber-cloth animations, proportional 30 kg fuel levels, urgent cleaning/ash blinking, and the optional temperature-only standby turn. Valid false error readings clear old faults even in standby, OFF, or before fresh power/mode messages arrive.
 
-Suggested AWTRIX Hub caption:
+Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing is configured in Homey or another publisher. These scripts subscribe to data; they do not control the stove or inverter.
 
-> Simulated AWTRIX NG preview rendered from the script's Berry draw calls with sample MQTT data. The PNG/GIF shows the intended 52×16 layout; it is not a physical TC002 recording. Actual colors, timing, brightness, font firmware, and live MQTT values can vary on the device.
+## Layout
 
-## Files
+- `SolarApp/`: active SolarApp sources, generated deliverables, tests, guide and media.
+- `PelletStove/`: active PelletStove source, frozen Homey input contract, tests, guide and media.
+- `tools/`: portable build, Berry capture, media rendering, packaging and validation.
+- `source-notices/`: unmodified upstream font, its license and provenance.
+- `dist/AWTRIX-Hub-media.zip`: current publication media bundle.
+- `archive/`: verified recovery snapshot of every original file before consolidation.
+- `work/`: ignored generated capture files; recreated by the build.
 
-- `SolarApp/solarapp-cover.png` — clean 1040×320 hero frame.
-- `SolarApp/solarapp-showcase.gif` — normal four-view SolarApp rotation, 20 seconds at 10 FPS.
-- `SolarApp/screenshots/` — clean 1040×320 stills; matching native 52×16 files are in `SolarApp/native/`.
-- `SolarApp/animations/` — clean 624×192 four-second per-scene GIFs at 10 FPS.
-- `PelletStove/` — the corresponding PelletStove cover, rotation, stills, and scene GIFs. The empty-hopper, clear-error, and power-off states are clean stills only because the source produces no meaningful animation in those states; the remaining dynamic scenes have genuine Berry-driven GIF motion.
-- `source-notices/` — the unmodified official AWTRIX NG BDF source, its retained license, and provenance notice.
+The old `SolarApp-extension` and Haas+Sohn `docs/awtrixng` folders are migration sources, not ongoing working locations. No Homey driver or firmware is required in a neighboring checkout.
 
-The sibling `AWTRIX-Hub-media.zip` contains only the README, provenance/hash manifest, source notices, and user-facing media folders. It intentionally excludes Berry source snapshots, JSON captures, and helper scripts.
+## Rebuild and verify
 
-## Rendering assumptions
-
-- Native panel geometry is 52×16; PNG screenshots use integer nearest-neighbor scaling to 1040×320 (20×), and GIFs use 624×192 (12×).
-- The capture harness advances simulated time by 25 ms per Berry draw, matching a nominal 40 FPS display loop, and saves every fourth draw for 10 FPS GIF output. The physical app scheduler and device frame rate can vary.
-- SolarApp's source increments its animation phase per draw; this media therefore assumes the nominal draw cadence. PelletStove's current animation is sampled at the same nominal cadence. Neither timing assumption is physical-device proof.
-- Each scene was warmed with approximately two seconds of actual script draws before `on_show()` and capture. The SolarApp showcase is a normal 5-second-per-view four-page rotation. The PelletStove showcase is a normal six-page 5-second rotation (30 seconds total) from the final source snapshot.
-
-## Sample data and interpretation
-
-SolarApp scenes use the requested sample values: 2500 W production, 12345 Wh daily yield, 900 W house load, 76% SOC, +850 W battery charging, and −420 W grid export. Signed battery/grid values are interpreted using the script's default `charge_positive` and `import_positive` conventions. The house-unknown scene uses 0 W solar, 0 W battery, 0 W grid, and 3000 W house load; the lightning icon is the script's source-unknown activity graphic and does not infer an energy split.
-
-PelletStove scenes use the Berry harness's sample state: on/off enabled, heating mode, 21.4°C actual / 22.0°C target, 8.4 kg pellets, 32.5 h cleaning interval, 45% ash usage, and clear error unless the scene says otherwise. The finished standby scene sets `standby_skip=true` (the setting defaults to `false`), requires power `Yes`, enters mode `STANDBY`, establishes the 21.4°C / 22.0°C baseline, then feeds a changed 21.5°C reading; the captured `SET22.0C` temperature-only visit is the source behavior. It does not claim that the physical script was skipped on a device.
-
-## Provenance
-
-The media uses the unmodified official small font copied from `com.haassohn.pellets/docs/awtrixng/tools/awtrix-small.bdf`, not the older SolarApp approximate renderer font. The accompanying `FONT-LICENSE.txt` and `FONT-NOTICE.md` are retained verbatim. The notice records upstream `Blueforcer/awtrix-ng`, source path `assets/fonts/awtrix.bdf`, retrieval date 2026-10-24, and source commit `0ec2b1b14d628c34d958bde6027cfb2748f64330`.
-
-The exact source SHA-256 values, source paths, and captured date are recorded in `source-hashes.json`. The SolarApp source used for the capture was `SolarApp-extension/SolarApp.ax`; its three supplied SolarApp deliverables were byte-identical at capture time. No source file in either application repository was modified by this media export.
-
-## Deterministic recapture and limits
-
-The private `tools/` and `work/` directories are retained in the working folder for reproducibility but are excluded from the publication ZIP. From this folder, the final capture/export sequence is:
+Requirements: Python (tested with 3.13.1), Pillow 10.4.0, Git, and a **Berry 1.1 interpreter built with 32-bit integers and single-precision floats**. The interpreter is an external development tool; it is not installed on the clock and is not bundled in this repository. The recovery snapshot includes the original Berry Makefile used for the local build. A different Berry numeric configuration is not equivalent to the embedded runtime used by these tests.
 
 ```powershell
-Set-Location work
-& 'C:\Users\breti\AppData\Local\Temp\codex-solarapp-tools\berry-1.1.0\berry32.exe' run_solar_capture.be
-Set-Location pellet
-& 'C:\Users\breti\AppData\Local\Temp\codex-solarapp-tools\berry-1.1.0\berry32.exe' run_pellet_capture.be
-Set-Location ..\..
-& 'C:\Python313\python.exe' tools\render_media.py --all
-& 'C:\Python313\python.exe' tools\validate_media.py
+python -m pip install -r requirements-dev.txt
+$env:BERRY = 'C:\path\to\berry32.exe'
+python tools/build.py --berry $env:BERRY
 ```
 
-The capture used the available Berry 1.1.0 32-bit VM and Python 3.13.1 with Pillow 10.4.0. Validation checks PNG/GIF opening, native/scaled geometry, GIF timing and total duration, changing frames for genuinely animated scenes, and every decoded GIF timestamp against the corresponding captured draw frame quantized with the same global palette; this catches disposal/background corruption. It also checks source hashes and ZIP contents. It does not prove Homey runtime behavior, MQTT delivery, AWTRIX Hub acceptance, physical display appearance, or actual hardware timing.
+The command regenerates SolarApp without changing its bytes, runs both mocked Berry suites, checks the frozen PelletStove input contract, captures the scripts with the official small-font metrics, renders the PNG/GIF media, writes relative source hashes, rebuilds the publication ZIP and validates every decoded GIF timestamp. All inputs come from this checkout. Full cold-build verification also checks that ignored `work/` data is unnecessary.
+
+Individual commands are documented in each app guide. `python tools/validate_media.py` checks an existing capture/export; run the full build first on a new clone.
+
+## Media and device verification
+
+All images here are **simulated previews using sample MQTT data**, not physical TC002 recordings. Exact hardware colors, brightness, timing, firmware integration and MQTT delivery remain unverified by the offline build. See [MEDIA.md](MEDIA.md) for dimensions, sample values and a caption to use when uploading to the Hub. Publishing this GitHub repository does not upload anything to AWTRIX Hub or install anything on a device.
+
+[TC002 color-calibration notes](docs/TC002-display-calibration.md) preserve the latest suggested trial settings and the distinction between LED output and the raw preview.
+
+The publication ZIP contains media, its source-hash manifest and font notices. Clone/download the repository to obtain the scripts and development sources.
+
+## Provenance and recovery
+
+SolarApp extends the supplied SolarApp 4.3.1; the unchanged original input retains its upstream Hub identity in `SolarApp/SolarApp.original.ax`. Current generated deliverables omit that identity. Retained third-party font terms are in [source-notices](source-notices/FONT-NOTICE.md). This reorganization does not invent or change the upstream license terms.
+
+The initial public backup commit is `4096c95`. [Recovery instructions](archive/README.md) and its SHA-256 inventory cover all files from the original three working directories, including intermediate captures and older export ZIPs. Historical files are recovery material; active development belongs in the app folders above.
+
+See the [migration map](MIGRATION.md) for the original paths and guarded cleanup procedure. The cleanup helper defaults to a dry run and refuses to remove files unless the current clean commit is on GitHub and every old file matches the recovery inventory.

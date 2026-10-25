@@ -1,0 +1,551 @@
+# @hub XjW8w6hHAcjO 48d27acb5bcd7fe5f91b88b3f7a8da0ca86dbeb43506afca19d407ff37fd5229
+# @name    SolarApp
+# @desc    Animated solar production, daily yield and house consumption display
+# @version 4.3.1
+# @display 52x16
+# @config  visual_style      select "Visual Style" default="sun_large" options="sun_large,sun_half"
+# @config  topic_power       text   "Power MQTT Topic" default="inverter/total/P_AC"
+# @config  topic_yield       text   "Daily Yield MQTT Topic" default="inverter/total/YieldDay"
+# @config  topic_consumption text   "Consumption MQTT Topic" default="house/total/power"
+# @config  default_view      select "Default Bottom View" default="yield" options="yield,consumption"
+# @config  max_power         number "Max Power (W)" default=800 min=100
+# @config  anim_speed        number "Animation Speed (1-10)" default=4 min=1 max=10
+# @config  yield_unit        select "Yield Unit" default=auto options=auto,kWh,Wh
+
+import math
+
+class SolarApp
+  var cfg_style, cfg_max_power, cfg_speed, cfg_yield_unit
+  var topic_power, topic_yield, topic_cons
+  var show_consumption
+  var power_val, yield_val, cons_val
+  var smooth_power, smooth_cons, smooth_ratio
+  var last_p_int, txt_p_num, w_p_num
+  var last_c_int, txt_c_num, w_c_num
+  var txt_y_num, txt_y_unit, w_y_num
+  var sun_rot, anim_phase, win_flash
+  var sun_large_pixels, sun_half_pixels
+  var solar_particles
+
+  def init()
+    self.cfg_style = str(store.get("visual_style"))
+    if self.cfg_style != "sun_half" self.cfg_style = "sun_large" end
+    self.cfg_max_power = int(num(store.get("max_power"), 800))
+    if self.cfg_max_power <= 0 self.cfg_max_power = 800 end
+    self.cfg_speed = int(num(store.get("anim_speed"), 4))
+    self.cfg_yield_unit = str(store.get("yield_unit"))
+    self.topic_power = str(store.get("topic_power"))
+    self.topic_yield = str(store.get("topic_yield"))
+    self.topic_cons = str(store.get("topic_consumption"))
+
+    var saved_view = store.get("active_view")
+    if saved_view != nil
+      self.show_consumption = (str(saved_view) == "consumption")
+    else
+      self.show_consumption = (str(store.get("default_view")) == "consumption")
+    end
+
+    self.power_val = nil
+    self.yield_val = nil
+    self.cons_val = nil
+    self.smooth_power = 0.0
+    self.smooth_cons = 0.0
+    self.smooth_ratio = 0.0
+    self.last_p_int = -1
+    self.txt_p_num = "--"
+    self.w_p_num = text_width("--")
+    self.last_c_int = -1
+    self.txt_c_num = "--"
+    self.w_c_num = text_width("--")
+    self.txt_y_num = "--"
+    self.txt_y_unit = "kWh"
+    self.w_y_num = text_width("--")
+    self.sun_rot = 0.0
+    self.anim_phase = 0.0
+    self.win_flash = 0.0
+
+    # Sonnenpartikel (x, y_base, speed, phase, color)
+    self.solar_particles = [
+      [17.4, 7.0, 0.23, 0.0, 0xC2410C],
+      [27.8, 3.5, 0.20, 1.5, 0xB45309],
+      [38.2, 8.0, 0.25, 3.2, 0x9A3412],
+      [23.5, 11.5, 0.19, 4.8, 0x92400E]
+    ]
+
+    # Basis-Sprite der 16x16 Sonne
+    var base_sun_16 = [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0x0F0600, 0x0F0600, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0x0F0600, 0x210D01, 0x4F2003, 0x4F2003, 0x210D01, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0x190A01, 0x3D1802, 0x361602, 0x361602, 0x9A3E07, 0x9A3E07, 0x361602, 0x361602, 0x3D1802, 0x190A01, 0, 0, 0],
+      [0, 0, 0, 0x3D1802, 0x893706, 0x933B07, 0xEC4E03, 0xF35B01, 0xF35B01, 0xEC4E03, 0x933B07, 0x893706, 0x3D1802, 0, 0, 0],
+      [0, 0, 0, 0x361602, 0x933B07, 0xF35B01, 0xFF7502, 0xFF8105, 0xFF8105, 0xFF7502, 0xF35B01, 0x933B07, 0x361602, 0x0F0600, 0, 0],
+      [0, 0, 0x210D01, 0x361602, 0xEC4E03, 0xFF7502, 0xFF8F09, 0xFFA10E, 0xFFA10E, 0xFF8F09, 0xFF7502, 0xEC4E03, 0x361602, 0x210D01, 0, 0],
+      [0, 0x0F0600, 0x4F2003, 0x9A3E07, 0xF35B01, 0xFF8105, 0xFFA10E, 0xFEC940, 0xFEC940, 0xFFA10E, 0xFF8105, 0xF35B01, 0x9A3E07, 0x4F2003, 0x0F0600, 0],
+      [0, 0x0F0600, 0x4F2003, 0x9A3E07, 0xF35B01, 0xFF8105, 0xFFA10E, 0xFEC940, 0xFEC940, 0xFFA10E, 0xFF8105, 0xF35B01, 0x9A3E07, 0x4F2003, 0x0F0600, 0],
+      [0, 0, 0x210D01, 0x361602, 0xEC4E03, 0xFF7502, 0xFF8F09, 0xFFA10E, 0xFFA10E, 0xFF8F09, 0xFF7502, 0xEC4E03, 0x361602, 0x210D01, 0, 0],
+      [0, 0, 0, 0x361602, 0x933B07, 0xF35B01, 0xFF7502, 0xFF8105, 0xFF8105, 0xFF7502, 0xF35B01, 0x933B07, 0x361602, 0x0F0600, 0, 0],
+      [0, 0, 0, 0x3D1802, 0x893706, 0x933B07, 0xEC4E03, 0xF35B01, 0xF35B01, 0xEC4E03, 0x933B07, 0x893706, 0x3D1802, 0, 0, 0],
+      [0, 0, 0, 0x190A01, 0x3D1802, 0x361602, 0x361602, 0x9A3E07, 0x9A3E07, 0x361602, 0x361602, 0x3D1802, 0x190A01, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0x0F0600, 0x210D01, 0x4F2003, 0x4F2003, 0x210D01, 0x0F0600, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0x0F0600, 0x0F0600, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]
+
+    # Vorberechnung für 16x16 Sonne (cx=7.5, cy=7.5, R=4.2)
+    self.sun_large_pixels = []
+    var cx16 = 7.5
+    var cy16 = 7.5
+    var R16 = 4.2
+    for y: 0 .. 15
+      var dy = real(y) - cy16
+      for x: 0 .. 15
+        var base_col = base_sun_16[y][x]
+        if base_col != 0
+          var dx = real(x) - cx16
+          var d2 = dx * dx + dy * dy
+          var r = math.sqrt(d2)
+          if r <= R16
+            var z2 = (R16 * R16) - d2
+            if z2 < 0.001 z2 = 0.001 end
+            var z = math.sqrt(z2)
+            var lon = math.atan(dx / (z + 0.001))
+            var lat = dy / R16
+            var limb = z / R16
+            self.sun_large_pixels.push([x, y, 1, lon, lat, limb, base_col, 0.0])
+          else
+            var angle = math.atan(dy / (dx + 0.0001))
+            self.sun_large_pixels.push([x, y, 0, 0.0, 0.0, 0.0, base_col, angle])
+          end
+        end
+      end
+    end
+
+    # Vorberechnung für halbe Riesensonne links (cx=-1.0, cy=7.5, S=1.7)
+    self.sun_half_pixels = []
+    var S_half = 1.7
+    var cx_half = -1.0
+    var cy_half = 7.5
+    var R_core_half = 4.2 * S_half
+    for y: 0 .. 15
+      var dy = real(y) - cy_half
+      for x: 0 .. 12
+        var dx = real(x) - cx_half
+        var sx_int = int(7.5 + dx / S_half + 0.5)
+        var sy_int = int(7.5 + dy / S_half + 0.5)
+        var base_col = 0
+        if sx_int >= 0 && sx_int < 16 && sy_int >= 0 && sy_int < 16
+          base_col = base_sun_16[sy_int][sx_int]
+        end
+
+        if base_col != 0
+          var d2 = dx * dx + dy * dy
+          var r = math.sqrt(d2)
+          if r <= R_core_half
+            var z2 = (R_core_half * R_core_half) - d2
+            if z2 < 0.001 z2 = 0.001 end
+            var z = math.sqrt(z2)
+            var lon = math.atan(dx / (z + 0.001))
+            var lat = dy / R_core_half
+            var limb = z / R_core_half
+            self.sun_half_pixels.push([x, y, 1, lon, lat, limb, base_col, 0.0])
+          else
+            var angle = math.atan(dy / (dx + 0.0001))
+            self.sun_half_pixels.push([x, y, 0, 0.0, 0.0, 0.0, base_col, angle])
+          end
+        end
+      end
+    end
+  end
+
+  def setup()
+    if size(self.topic_power) > 0
+      mqtt.subscribe(self.topic_power, / topic, payload -> self.on_mqtt_power(payload))
+    end
+    if size(self.topic_yield) > 0
+      mqtt.subscribe(self.topic_yield, / topic, payload -> self.on_mqtt_yield(payload))
+    end
+    if size(self.topic_cons) > 0
+      mqtt.subscribe(self.topic_cons, / topic, payload -> self.on_mqtt_cons(payload))
+    end
+  end
+
+  def on_button(btn)
+    if btn == "select"
+      self.show_consumption = !self.show_consumption
+      store.set("active_view", self.show_consumption ? "consumption" : "yield")
+      return true
+    end
+  end
+
+  def extract_number(payload, pattern)
+    var v = num(payload)
+    if v != nil return real(v) end
+    var m = re.search(pattern, payload)
+    if m != nil
+      v = num(m[2])
+      if v != nil return real(v) end
+    end
+    return nil
+  end
+
+  def on_mqtt_power(payload)
+    var val = self.extract_number(payload, "\"(production|Production|P_AC|power|Power|solar_power|solar_production|P_PV|p_ac|val|value|p|P)\"\\s*:\\s*\"?([-0-9.]+)")
+    if val != nil
+      if val < 0.0 val = 0.0 end
+      if self.power_val == nil self.smooth_power = val end
+      self.power_val = val
+    end
+  end
+
+  def on_mqtt_yield(payload)
+    var val = self.extract_number(payload, "\"(YieldDay|yield|Yield|production|Production|daily_production|today_production|energy_today|yield_day|val|value|energy|Energy|y|E_Day)\"\\s*:\\s*\"?([-0-9.]+)")
+    if val != nil
+      if val < 0.0 val = 0.0 end
+      self.yield_val = val
+      if self.cfg_yield_unit == "Wh" || (self.cfg_yield_unit == "auto" && val < 1000.0)
+        self.txt_y_num = str(int(val + 0.5))
+        self.txt_y_unit = "Wh"
+      else
+        var kwh = val / 1000.0
+        var whole = int(kwh)
+        var dec = int((kwh * 10.0) % 10.0)
+        self.txt_y_num = str(whole) + "." + str(dec)
+        self.txt_y_unit = "kWh"
+      end
+      self.w_y_num = text_width(self.txt_y_num)
+    end
+  end
+
+  def on_mqtt_cons(payload)
+    var val = self.extract_number(payload, "\"(consumption|Consumption|power|Power|house_power|grid_power|load|Load|P_Load|p_load|total_power|act_power|apower|val|value|p|P)\"\\s*:\\s*\"?([-0-9.]+)")
+    if val != nil
+      if val < 0.0 val = 0.0 end
+      if self.cons_val == nil self.smooth_cons = val end
+      self.cons_val = val
+    end
+  end
+
+  def blend_color(c1, c2, t)
+    if t <= 0.0 return c1 end
+    if t >= 1.0 return c2 end
+    var r1 = (c1 >> 16) & 0xFF
+    var g1 = (c1 >> 8) & 0xFF
+    var b1 = c1 & 0xFF
+    var r2 = (c2 >> 16) & 0xFF
+    var g2 = (c2 >> 8) & 0xFF
+    var b2 = c2 & 0xFF
+    var r = int(real(r1) + real(r2 - r1) * t)
+    var g = int(real(g1) + real(g2 - g1) * t)
+    var b = int(real(b1) + real(b2 - b1) * t)
+    if r < 0 r = 0 end
+    if g < 0 g = 0 end
+    if b < 0 b = 0 end
+    if r > 255 r = 255 end
+    if g > 255 g = 255 end
+    if b > 255 b = 255 end
+    return (r << 16) | (g << 8) | b
+  end
+
+  def draw()
+    clear()
+
+    # 1. Wert-Interpolation (Easing)
+    var target_p = (self.power_val != nil) ? self.power_val : 0.0
+    self.smooth_power += (target_p - self.smooth_power) * 0.15
+    if math.abs(target_p - self.smooth_power) < 0.3 self.smooth_power = target_p end
+
+    var target_c = (self.cons_val != nil) ? self.cons_val : 0.0
+    self.smooth_cons += (target_c - self.smooth_cons) * 0.15
+    if math.abs(target_c - self.smooth_cons) < 0.3 self.smooth_cons = target_c end
+
+    var target_ratio = self.smooth_power / real(self.cfg_max_power)
+    if target_ratio > 1.0 target_ratio = 1.0 end
+    if target_ratio < 0.0 target_ratio = 0.0 end
+    self.smooth_ratio += (target_ratio - self.smooth_ratio) * 0.10
+
+    var is_producing = (self.smooth_power >= 1.0)
+    var has_power_data = (self.power_val != nil)
+    var has_cons_data = (self.cons_val != nil)
+    var is_surplus = (self.smooth_power >= self.smooth_cons && has_cons_data)
+
+    if has_power_data
+      var p_int = int(self.smooth_power + 0.5)
+      if p_int != self.last_p_int
+        self.last_p_int = p_int
+        self.txt_p_num = str(p_int)
+        self.w_p_num = text_width(self.txt_p_num)
+      end
+    end
+
+    if has_cons_data
+      var c_int = int(self.smooth_cons + 0.5)
+      if c_int != self.last_c_int
+        self.last_c_int = c_int
+        self.txt_c_num = str(c_int)
+        self.w_c_num = text_width(self.txt_c_num)
+      end
+    end
+
+    # 2. Phasen & Animationen
+    var speed_mult = real(self.cfg_speed) * 0.25
+    var rot_speed = is_producing ? (0.04 + (0.18 * self.smooth_ratio)) : 0.0
+    self.sun_rot += rot_speed * speed_mult
+    self.anim_phase += real(self.cfg_speed) * 0.05
+    if self.win_flash > 0.02
+      self.win_flash = self.win_flash * 0.84
+    else
+      self.win_flash = 0.0
+    end
+
+    var C_YELLOW = 0xFEC940
+    var C_AMBER  = 0xFFA10E
+    var C_WARM_O = 0xFF8105
+    var C_FIRE_O = 0xFF7502
+    var C_DEEP_O = 0xEC4E03
+    var C_LOBE_A = 0x9A3E07
+
+    # ----------------------------------------------------
+    # 3. VISUELLE DARSTELLUNG DER LINKEN SEITE (SUN_LARGE / SUN_HALF)
+    # ----------------------------------------------------
+    var sun_list = (self.cfg_style == "sun_half") ? self.sun_half_pixels : self.sun_large_pixels
+    for p: sun_list
+      var px = p[0]
+      var py = p[1]
+      var is_core = p[2]
+      var base_col = p[6]
+      var col = 0
+
+      if is_producing
+        if is_core == 1
+          var lon = p[3]
+          var lat = p[4]
+          var limb = p[5]
+          var phi = lon - self.sun_rot
+          var surf = 0.65 * math.sin(2.0 * phi) * math.cos(lat * 1.8) + 0.35 * math.sin(3.5 * phi + lat)
+          var brightness = limb * 0.75 + surf * 0.25
+
+          if brightness > 0.65
+            col = self.blend_color(C_AMBER, C_YELLOW, (brightness - 0.65) / 0.35)
+          elif brightness > 0.45
+            col = self.blend_color(C_WARM_O, C_AMBER, (brightness - 0.45) / 0.20)
+          elif brightness > 0.25
+            col = self.blend_color(C_FIRE_O, C_WARM_O, (brightness - 0.25) / 0.20)
+          elif brightness > 0.10
+            col = self.blend_color(C_DEEP_O, C_FIRE_O, (brightness - 0.10) / 0.15)
+          else
+            col = self.blend_color(C_LOBE_A, C_DEEP_O, brightness / 0.10)
+          end
+        else
+          var angle = p[7]
+          var pulse = 0.5 + 0.5 * math.sin(self.anim_phase * 2.0 + math.cos(8.0 * angle) * 0.7)
+          col = self.blend_color(base_col, C_FIRE_O, pulse * 0.30 * self.smooth_ratio)
+        end
+      else
+        if is_core == 1
+          col = self.blend_color(0x361602, 0x4F2003, p[5])
+        else
+          col = self.blend_color(0x000000, base_col, 0.4)
+        end
+      end
+      pixel(px, py, col)
+    end
+
+    # ----------------------------------------------------
+    # 4. RECHTER RAND: SOLARPANEL (YIELD) ODER HAUS (CONSUMPTION)
+    # ----------------------------------------------------
+    if !self.show_consumption
+      # === YIELD-MODUS: SOLARPANEL & SONNENPARTIKEL ===
+      for py: 1 .. 14
+        for px: 48 .. 51
+          var is_frame = (py == 1 || py == 14 || px == 48)
+          var is_busbar = (py == 5 || py == 9 || py == 13)
+          var p_col = 0
+
+          if is_producing
+            if is_frame
+              p_col = 0x00E5FF
+            elif is_busbar
+              p_col = 0x00B0FF
+            else
+              p_col = 0x0D47A1
+            end
+
+            var shimmer = math.sin(self.anim_phase * 0.45 + real(px - 48) * 0.5 - real(py) * 0.35)
+            if shimmer > 0.25 && !is_frame
+              p_col = self.blend_color(p_col, 0x80D8FF, (shimmer - 0.25) * 0.7)
+            elif is_frame && shimmer > 0.60
+              p_col = self.blend_color(p_col, 0xFFFFFF, (shimmer - 0.60) * 0.6)
+            end
+          else
+            p_col = is_frame ? 0x1A237E : 0x0A192F
+          end
+          pixel(px, py, p_col)
+        end
+      end
+
+      if is_producing
+        var p_speed_mult = speed_mult * (0.70 + 1.80 * self.smooth_ratio)
+        for p: self.solar_particles
+          p[0] = p[0] + p[2] * p_speed_mult
+          if p[0] >= 48.0
+            p[0] = 11.0 + real(int(p[3]) % 3)
+            p[1] = 3.5 + real(int(p[1] + 2.5) % 8)
+          end
+
+          var py = int(p[1] + 0.35 * math.sin(p[0] * 0.15 + p[3]) + 0.5)
+          if py >= 0 && py < 16
+            var ix_head = int(p[0])
+            for i: 0 .. 4
+              var cur_x = ix_head + 1 - i
+              if cur_x >= 11 && cur_x < 48
+                var dist = p[0] - real(cur_x)
+                var w = 0.0
+                if dist >= 0.0 && dist <= 2.8
+                  var f = 1.0 - dist / 2.8
+                  w = f * f
+                elif dist < 0.0 && dist > -0.6
+                  w = 1.0 + dist * 1.6
+                end
+                var eff_w = w * 0.60
+                if eff_w >= 0.03
+                  pixel(cur_x, py, self.blend_color(0x000000, p[4], eff_w))
+                end
+              end
+            end
+          end
+        end
+      end
+
+    else
+      # === CONSUMPTION-MODUS: HAUS-SILHOUETTE AM RECHTEN RAND (x=45..51) ===
+      if is_producing
+        var p_speed_mult = speed_mult * (0.70 + 1.80 * self.smooth_ratio)
+        for p: self.solar_particles
+          p[0] = p[0] + p[2] * p_speed_mult
+          if p[0] >= 46.0
+            p[0] = 11.0 + real(int(p[3]) % 3)
+            p[1] = 3.5 + real(int(p[1] + 2.5) % 8)
+            self.win_flash = 1.0
+          end
+
+          var base_y = p[1] + 0.35 * math.sin(p[0] * 0.15 + p[3])
+          if p[0] > 34.0
+            var pull = (p[0] - 34.0) / 12.0
+            base_y = base_y + (10.0 - base_y) * pull * 0.65
+          end
+          var py = int(base_y + 0.5)
+
+          if py >= 0 && py < 16
+            var ix_head = int(p[0])
+            for i: 0 .. 4
+              var cur_x = ix_head + 1 - i
+              if cur_x >= 11 && cur_x < 46
+                var dist = p[0] - real(cur_x)
+                var w = 0.0
+                if dist >= 0.0 && dist <= 2.8
+                  var f = 1.0 - dist / 2.8
+                  w = f * f
+                elif dist < 0.0 && dist > -0.6
+                  w = 1.0 + dist * 1.6
+                end
+                var eff_w = w * 0.65
+                if eff_w >= 0.03
+                  pixel(cur_x, py, self.blend_color(0x000000, p[4], eff_w))
+                end
+              end
+            end
+          end
+        end
+      end
+
+      # Haus (Schornstein, Dach, Wände)
+      var roof_col = is_surplus ? 0x00E676 : 0xFF9100
+      var wall_col = is_surplus ? 0x1E3A2F : 0x263238
+      var edge_col = is_surplus ? 0x2E5A44 : 0x37474F
+
+      # Schornstein (x=50, y=1..2)
+      pixel(50, 1, 0x546E7A)
+      pixel(50, 2, 0x455A64)
+
+      # Schrägdach (y=3..7, nach links abfallend bis x=45)
+      for dy: 0 .. 4
+        var py = 3 + dy
+        var start_x = 49 - dy
+        for px: start_x .. 51
+          var is_top = (px == start_x || py == 3)
+          pixel(px, py, is_top ? roof_col : self.blend_color(wall_col, roof_col, 0.35))
+        end
+      end
+
+      # Hauswand (x=46..51, y=8..14)
+      for py: 8 .. 14
+        for px: 46 .. 51
+          pixel(px, py, (px == 46 || py == 14) ? edge_col : wall_col)
+        end
+      end
+
+      # Feste 2x2 Fenster mit Kaminfeuer-/Glühfaden-Flackern bei Netzbezug
+      if is_surplus
+        var win_base = 0xFFB300
+        var pulse_w = 0.5 + 0.5 * math.sin(self.anim_phase * 1.5)
+        var win_col = self.blend_color(win_base, 0xFFF59D, pulse_w * 0.25 + self.win_flash * 0.75)
+        for wx: 48 .. 49
+          pixel(wx, 8,  win_col)
+          pixel(wx, 9,  win_col)
+          pixel(wx, 11, win_col)
+          pixel(wx, 12, win_col)
+        end
+      else
+        var f_base = self.anim_phase * 2.8
+        var flicker_top = 0.5 + 0.35 * math.sin(f_base) + 0.15 * math.sin(f_base * 2.3 + 1.2)
+        var flicker_bot = 0.5 + 0.35 * math.cos(f_base * 0.9 + 2.1) + 0.15 * math.sin(f_base * 1.7)
+
+        var c_dim  = 0xE65100
+        var c_mid  = 0xFFA000
+        var c_glow = 0xFFD54F
+
+        var col_t1 = self.blend_color(c_dim, c_mid, flicker_top)
+        var col_t2 = self.blend_color(c_mid, c_glow, flicker_top * 0.8)
+        var col_b1 = self.blend_color(c_dim, c_mid, flicker_bot)
+        var col_b2 = self.blend_color(c_mid, c_glow, flicker_bot * 0.8)
+
+        pixel(48, 8, col_t1)
+        pixel(49, 8, col_t2)
+        pixel(48, 9, col_t2)
+        pixel(49, 9, col_t1)
+
+        pixel(48, 11, col_b1)
+        pixel(49, 11, col_b2)
+        pixel(48, 12, col_b2)
+        pixel(49, 12, col_b1)
+      end
+    end
+
+    # ----------------------------------------------------
+    # 5. TEXTBEREICH: SOLAR-PRODUKTION (OBEN) & YIELD/CONSUMPTION (UNTEN)
+    # ----------------------------------------------------
+    var text_x = (self.cfg_style == "sun_half") ? 15 : 17
+
+    # Zeile 1 (y=6): Solar-Produktion in Watt (GELB)
+    var col_power = is_producing ? 0xFFC107 : 0x9E9E9E
+    text(text_x, 6, self.txt_p_num, col_power)
+    text(text_x + self.w_p_num + 2, 6, "W", col_power)
+
+    # Zeile 2 (y=14): Tagesertrag (Yield) ODER Hausverbrauch (Consumption)
+    if !self.show_consumption
+      var col_yield = is_producing ? 0x00E676 : 0x00C853
+      text(text_x, 14, self.txt_y_num, col_yield)
+      text(text_x + self.w_y_num + 2, 14, self.txt_y_unit, col_yield)
+    else
+      var col_cons = 0x9E9E9E
+      if has_cons_data
+        col_cons = is_surplus ? 0x00E676 : 0xFF5252
+      end
+      text(text_x, 14, self.txt_c_num, col_cons)
+      text(text_x + self.w_c_num + 2, 14, "W", col_cons)
+    end
+  end
+end
+
+return SolarApp()
