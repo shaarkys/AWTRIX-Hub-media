@@ -10,6 +10,7 @@
 # @config wind bool "Wind module" default=true group="Modules"
 # @config station_id text "Station ID filter" default="" maxlen=64 group="Account" help="Empty shows all owned stations."
 # @config seconds number "Seconds per page" default=6 min=3 max=12 unit=s group="Display"
+# @config show_names bool "Show room names" default=false group="Display" help="Enable to distinguish modules in different rooms."
 # @config every number "Refresh interval" default=10 min=5 max=60 unit=min group="Freshness"
 # @config stale_minutes number "Stale after" default=45 min=20 max=240 unit=min group="Freshness"
 # @config max_age_minutes number "No data after" default=180 min=60 max=1440 unit=min group="Freshness"
@@ -27,6 +28,7 @@ class NetatmoV2 : NetatmoArtwork
   var enabled, station_id
   var page_ms, poll_ms, stale_ms, max_age_ms
   var co2_low, co2_high
+  var show_names
   var quiet, quiet_from, quiet_to
   var modules, module_order
   var pages, frozen_pages, shown_at
@@ -53,6 +55,7 @@ class NetatmoV2 : NetatmoArtwork
     self.co2_low = int(clamp(num(store.get("clow"), 800), 400, 2500))
     self.co2_high = int(clamp(num(store.get("chigh"), 1500), 500, 5000))
     if self.co2_high <= self.co2_low self.co2_high = self.co2_low + 1 end
+    self.show_names = store.get("show_names", false) == true
     self.quiet = store.get("quiet", false) == true
     self.quiet_from = int(clamp(num(store.get("qfrom"), 23), 0, 23))
     self.quiet_to = int(clamp(num(store.get("qto"), 8), 0, 23))
@@ -351,7 +354,8 @@ class NetatmoV2 : NetatmoArtwork
       "kind":module.find("kind"), "view":view, "name":module.find("name"), "id":module.find("id"),
       "values":module.find("values"), "stamp":module.find("stamp"), "received":module.find("received"),
       "battery":module.find("battery"), "reachable":module.find("reachable"),
-      "celsius":celsius, "co2_low":self.co2_low, "co2_high":self.co2_high
+      "celsius":celsius, "co2_low":self.co2_low, "co2_high":self.co2_high,
+      "show_name":self.show_names
     }
   end
 

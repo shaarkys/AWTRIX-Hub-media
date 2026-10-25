@@ -80,6 +80,9 @@ def main() -> None:
     assert used == set(settings), f"setting metadata and use differ: {used ^ set(settings)}"
     assert settings["every"][1] == {"default": "10", "min": "5", "max": "60", "unit": "min", "group": "Freshness"}
     assert all(settings[name][1]["default"] == "true" for name in ("indoor", "outdoor", "extra", "rain", "wind"))
+    assert settings["show_names"][1]["default"] == "false"
+    font_source = (REPO / "source-notices/awtrix-small.bdf").read_text(encoding="utf-8")
+    assert re.search(r"ENCODING 176\nSWIDTH [^\n]+\nDWIDTH 3 0", font_source), "degree advance changed"
 
     fixture_paths = sorted((ROOT / "fixtures").glob("*.json"))
     assert fixture_paths and all(json.loads(path.read_text(encoding="utf-8")) for path in fixture_paths)

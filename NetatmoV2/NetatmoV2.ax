@@ -10,6 +10,7 @@
 # @config wind bool "Wind module" default=true group="Modules"
 # @config station_id text "Station ID filter" default="" maxlen=64 group="Account" help="Empty shows all owned stations."
 # @config seconds number "Seconds per page" default=6 min=3 max=12 unit=s group="Display"
+# @config show_names bool "Show room names" default=false group="Display" help="Enable to distinguish modules in different rooms."
 # @config every number "Refresh interval" default=10 min=5 max=60 unit=min group="Freshness"
 # @config stale_minutes number "Stale after" default=45 min=20 max=240 unit=min group="Freshness"
 # @config max_age_minutes number "No data after" default=180 min=60 max=1440 unit=min group="Freshness"
@@ -29,16 +30,13 @@ import string
 # clock time.  The core gives it a frozen page, an elapsed value for the
 # deterministic four-second animation loop, and a health state.
 class NetatmoArtwork
-  var bg, bg_mid, bg_floor, steel, steel_hi, teal, teal_hi, warm, amber, red
-  var palette_ready, current_health
+  var steel, steel_hi, teal, teal_hi, warm, amber, red
+  var palette_ready, current_health, show_caption
   var upper_map, translit_map, glyphs
 
   def init_palette()
     # Lazily initialized so the artwork is also usable in the standalone
     # Berry harness, where a derived core may not call a superclass init.
-    self.bg = 0x080D19
-    self.bg_mid = 0x101C2A
-    self.bg_floor = 0x1A2B35
     self.steel = 0x304A57
     self.steel_hi = 0x89B8BA
     self.teal = 0x55BDB4
@@ -215,23 +213,13 @@ class NetatmoArtwork
   end
 
   def name_caption(page, color)
-    self.rf(0, 10, 19, 6, 0x0C1822)
+    if !self.show_caption return end
+    self.rf(0, 10, 19, 6, 0x000000)
     var caption = self.safe_name(isinstance(page, map) ? page.find("name", "ROOM") : "ROOM")
     for index : 0 .. size(caption) - 1
       if index >= 5 break end
       self.micro(caption[index .. index], index * 4, 11, color)
     end
-  end
-
-  def backplate()
-    self.rf(0, 0, 52, 4, self.bg)
-    self.rf(0, 4, 52, 6, self.bg_mid)
-    self.rf(0, 10, 52, 6, self.bg_floor)
-    self.rf(18, 0, 34, 7, 0x0B1823)
-    self.rf(18, 8, 34, 8, 0x0D202A)
-    self.rf(17, 0, 1, 16, 0x2B4650)
-    self.rf(19, 0, 1, 16, 0x07131E)
-    self.rf(18, 7, 34, 1, 0x17313A)
   end
 
   def page_markers(index, total, color)
@@ -242,7 +230,6 @@ class NetatmoArtwork
     # The bottom row is unused by the two metric baselines.  A 32px track
     # preserves the exact relative position for all 1..24 page turns instead
     # of collapsing larger page lists into four dots over the first metric.
-    self.rf(20, 15, 32, 1, 0x294650)
     var marker = 20
     if count > 1 marker = 20 + int(selected * 31.0 / (count - 1) + 0.5) end
     self.rf(marker, 15, 1, 1, color)
@@ -355,15 +342,15 @@ class NetatmoArtwork
 
   def temp_label(page, health, key, unit)
     var value = self.metric(page, health, key, nil)
-    if value == nil return "T--" + unit end
+    if value == nil return "--" + unit end
     var celsius = true
     if isinstance(page, map) celsius = page.find("celsius", true) != false end
-    return "T" + self.number(self.safe_temp(value, celsius), 1) + unit
+    return self.number(self.safe_temp(value, celsius), 1) + unit
   end
 
   def humidity_label(page, health)
     var value = self.metric(page, health, "Humidity", nil)
-    return value == nil ? "H--%" : "H" + self.number(value, 0) + "%"
+    return value == nil ? "--%" : self.number(value, 0) + "%"
   end
 
   def co2_color(page, value, base)
@@ -390,8 +377,8 @@ class NetatmoArtwork
   def draw_climate(page, health, unit, primary)
     var temperature = self.metric(page, health, "Temperature", nil)
     var humidity = self.metric(page, health, "Humidity", nil)
-    var t = temperature == nil ? "T--" + unit : self.temp_label(page, health, "Temperature", unit)
-    var h = humidity == nil ? "H--%" : self.humidity_label(page, health)
+    var t = temperature == nil ? "--" + unit : self.temp_label(page, health, "Temperature", unit)
+    var h = humidity == nil ? "--%" : self.humidity_label(page, health)
     self.text_metric(6, t, primary)
     self.text_metric(14, h, self.stale(health) ? self.amber : self.teal_hi)
   end
@@ -468,9 +455,7 @@ class NetatmoArtwork
     # A compact 24H badge keeps the unit/context clear without stealing the
     # metric lane's width from a normal decimal total such as 12.5mm.
     # Keep the badge left of the battery overlay at x=14..17.
-    self.rf(1, 0, 13, 6, 0x102B36)
-    self.rf(1, 0, 13, 1, 0x668F91)
-    self.rf(1, 5, 13, 1, 0x294B54)
+    if !self.show_caption self.rf(1, 0, 13, 6, 0x000000) end
     self.micro("2", 2, 1, self.amber)
     self.micro("4", 6, 1, self.amber)
     self.micro("H", 10, 1, self.amber)
@@ -508,124 +493,97 @@ class NetatmoArtwork
 
   def room_scene(elapsed_ms, kind, view, active)
     var pulse = int(self.phase(elapsed_ms) / 500) % 2
-    self.rf(0, 0, 18, 10, kind == "outdoor" ? 0x0A1C2B : 0x111F2B)
-    self.rf(0, 8, 18, 2, kind == "outdoor" ? 0x183A39 : 0x2A3040)
+    var base = self.show_caption ? 9 : 15
+    var top = self.show_caption ? 0 : 2
     if kind == "outdoor"
-      self.rf(1, 5, 5, 4, 0x244E4A)
-      self.rf(3, 3, 1, 6, 0x39756A)
-      self.rf(2, 2, 3, 3, 0x3E907F)
-      self.rf(1, 3, 5, 2, 0x2B706B)
-      self.px(2, 3, 0x9BD6B2) self.px(4, 2, 0x75C8A3)
-      self.rf(10, 1, 6, 1, 0x27445A)
-      self.rf(12, 0, 2, 5, 0x5E8C93)
-      self.rf(13, 1, 1, 3, 0xDBA25A)
-      self.rf(13, 5, 2, 1, 0x304D56)
-      self.px(14, pulse == 0 ? 4 : 3, self.warm)
+      # Foliage and a weather module identify outdoors, without a forecast.
+      self.rf(2, base - 5, 1, 5, 0x65825C)
+      self.rf(0, base - 6, 5, 2, 0x458C6A)
+      self.rf(1, base - 8, 3, 2, 0x75B487)
+      self.px(1, base - 6, 0xB9D8A2)
+      self.rf(9, top + 1, 6, base - top - 1, 0x70878C)
+      self.rf(10, top, 4, 1, 0xD4DFD9)
+      self.rf(10, top + 1, 2, base - top - 2, 0xB6C9C5)
+      self.rf(12, top + 1, 2, base - top - 2, 0x8EA5A5)
+      self.rf(10, base - 2, 4, 1, pulse == 0 ? self.teal : 0x3F7777)
+      self.rf(8, base, 8, 1, 0x364947)
+    elif kind == "extra"
+      # Broad upholstered seat and a separate sensor: the Couch module.
+      self.rf(3, base - 6, 11, 4, 0xA96C49)
+      self.rf(3, base - 6, 11, 1, 0xD29B65)
+      self.rf(1, base - 4, 3, 4, 0x76513F)
+      self.rf(13, base - 4, 3, 4, 0x76513F)
+      self.rf(4, base - 2, 9, 2, 0xBD8254)
+      self.rf(7, base - 5, 1, 3, pulse == 0 ? 0xC48653 : 0xA96C49)
+      self.rf(3, base, 2, 1, 0x4A4541) self.rf(12, base, 2, 1, 0x4A4541)
+      self.rf(14, top, 3, 4, 0x9CB1AE)
+      self.rf(14, top, 1, 4, 0xD4DFD9)
+      self.px(15, top + 2, pulse == 0 ? self.teal : 0x3F7777)
     else
-      # A shaded room and warm window provide a shared domestic setting; the
-      # kind-specific couch/tower overlays below identify the module.
-      self.rf(1, 1, 7, 5, 0x1A3A47)
-      self.rf(2, 2, 5, 3, pulse == 0 ? 0x397A83 : 0x4B9AA0)
-      self.rf(1, 1, 7, 1, 0x688E90)
-      self.rf(4, 1, 1, 5, 0x3B5961)
-      self.rf(2, 5, 5, 1, 0x203642)
-      self.rf(9, 6, 6, 3, 0x6B4E41)
-      self.rf(10, 5, 4, 1, 0xBD7A4F)
-      self.rf(10, 7, 4, 2, 0xA36C47)
-      self.rf(11, 4, 2, 2, 0x5B8C6D)
-      self.px(11, 3, 0x8BC79A)
-      self.rf(2, 8, 14, 1, 0x45616A)
-      self.rf(3, 9, 12, 1, 0x1C2A31)
-      if kind == "extra"
-        # Extra indoor modules get a recognizable couch silhouette instead of
-        # reusing the main station's tower scene.
-        self.rf(1, 6, 2, 4, 0x6B4E41)
-        self.rf(14, 6, 2, 4, 0x6B4E41)
-        self.rf(2, 5, 13, 3, 0xA36C47)
-        self.rf(3, 5, 11, 1, 0xC18A54)
-        self.rf(3, 8, 11, 1, 0x704A3B)
-        self.rf(4, 9, 2, 1, 0x3A3C3D)
-        self.rf(12, 9, 2, 1, 0x3A3C3D)
-        self.rf(5, 6, 1, 2, pulse == 0 ? 0xB9774D : 0x8F5D43)
-        self.rf(10, 6, 1, 2, pulse == 0 ? 0xB9774D : 0x8F5D43)
-      else
-        # Main indoor station: a narrow Netatmo tower beside the warm room.
-        self.rf(13, 2, 3, 5, 0x45616A)
-        self.rf(14, 1, 1, 1, 0xB7D4CE)
-        self.rf(14, 3, 1, 2, pulse == 0 ? 0x6DBDB4 : 0x3F7777)
-        self.rf(13, 6, 3, 1, active ? self.teal : 0x4A666A)
-      end
-    end
-    if active
-      self.px(16, 7 + pulse, self.warm)
-    else
-      self.px(16, 7, 0x4C6C70)
+      # Warm window beside the shaded cylindrical indoor Netatmo station.
+      self.rf(1, top, 6, 6, 0x926D48)
+      self.rf(2, top + 1, 4, 4, 0xFFD68A)
+      self.rf(4, top + 1, 1, 4, 0xAE834F)
+      self.rf(2, top + 3, 4, 1, 0xAE834F)
+      self.rf(10, top + 1, 6, base - top - 1, 0x6B8388)
+      self.rf(11, top, 4, 1, 0xD4DFD9)
+      self.rf(11, top + 1, 2, base - top - 2, 0xB6C9C5)
+      self.rf(13, top + 1, 2, base - top - 2, 0x8EA5A5)
+      self.rf(11, base - 2, 4, 1, pulse == 0 ? self.teal : 0x3F7777)
+      self.rf(9, base, 8, 1, 0x364947)
     end
   end
 
   def rain_scene(elapsed_ms, active)
-    self.rf(0, 0, 18, 10, 0x0B1D2B)
-    self.rf(0, 8, 18, 2, 0x16404B)
-    self.rf(2, 3, 13, 4, 0x4A6971)
-    self.rf(4, 2, 8, 1, 0x67888C)
-    self.rf(1, 5, 4, 2, 0x5E7B80)
-    self.rf(13, 5, 3, 2, 0x385760)
-    self.px(4, 3, 0xC3D9D2)
+    var base = self.show_caption ? 9 : 15
+    # An open gauge bowl and falling drops only when rain was measured.
+    self.rf(2, base - 5, 13, 1, 0xB6C9C5)
+    self.rf(1, base - 4, 15, 2, 0x738D94)
+    self.rf(3, base - 4, 11, 1, 0x000000)
+    self.rf(3, base - 2, 11, 2, 0x4C656E)
+    self.rf(5, base, 7, 1, 0x2D434B)
+    self.px(3, base - 3, 0xB7D7D1)
     if active
-      var phase = int(self.phase(elapsed_ms) / 250)
+      var tick = int(self.phase(elapsed_ms) / 180)
+      var span = max(3, base - 5)
       for drop : 0 .. 2
         var x = 4 + drop * 5
-        var y = 7 + ((phase + drop * 3) % 3)
+        var y = (tick + drop * 3) % span
         self.px(x, y, self.teal_hi)
-        if y < 9 self.px(x, y + 1, self.teal) end
+        self.px(x, y + 1, self.teal)
       end
-      self.rf(7, 9, 4, 1, 0x6CC1B7)
-    else
-      self.px(15, 1, self.warm)
-      self.px(14, 1, 0xB26C32)
-      self.px(15, 2, 0xB26C32)
-      self.rf(5, 9, 7, 1, 0x547A73)
     end
   end
 
   def wind_scene(elapsed_ms, active, angle)
-    self.rf(0, 0, 18, 10, 0x0A1B2A)
-    self.rf(0, 8, 18, 2, 0x1B3A3B)
-    self.rf(8, 4, 2, 6, 0x7B8D86)
-    self.rf(6, 9, 7, 1, 0x40615D)
-    self.rf(4, 3, 4, 1, 0xC5A764)
-    self.rf(3, 4, 6, 1, 0x9A8458)
-    self.rf(4, 5, 4, 1, 0x6B5B42)
-    var turn = int(self.phase(elapsed_ms) / 400) % 4
-    if !active turn = 0 end
-    var base = angle == nil ? 0 : int(clamp(angle, -360.0, 360.0) / 45.0)
-    var spoke = (base + turn) % 4
-    if spoke == 0
-      self.ln(9, 3, 14, 3, self.teal_hi) self.ln(9, 3, 7, 1, self.teal)
-      self.ln(9, 3, 11, 6, self.teal)
-    elif spoke == 1
-      self.ln(9, 3, 13, 7, self.teal_hi) self.ln(9, 3, 13, 2, self.teal)
-      self.ln(9, 3, 6, 4, self.teal)
-    elif spoke == 2
-      self.ln(9, 3, 9, 8, self.teal_hi) self.ln(9, 3, 5, 5, self.teal)
-      self.ln(9, 3, 13, 5, self.teal)
+    var base = self.show_caption ? 9 : 15
+    var cy = self.show_caption ? 3 : 5
+    self.rf(8, cy, 2, base - cy, 0x8EA5A5)
+    self.rf(8, cy, 1, base - cy, 0xD4DFD9)
+    self.rf(5, base, 8, 1, 0x3F5857)
+    var turn = active ? int(self.phase(elapsed_ms) / 200) % 4 : 0
+    if turn == 0 || turn == 2
+      self.ln(3, cy, 14, cy, self.steel_hi)
+      self.rf(1, cy - 1, 4, 2, turn == 0 ? self.amber : self.teal)
+      self.rf(13, cy, 4, 2, turn == 0 ? self.teal : self.amber)
+      self.ln(8, cy, 10, cy + 3, self.steel_hi)
+      self.rf(9, cy + 2, 4, 2, self.teal_hi)
     else
-      self.ln(9, 3, 5, 7, self.teal_hi) self.ln(9, 3, 6, 2, self.teal)
-      self.ln(9, 3, 12, 4, self.teal)
+      self.ln(4, cy - 2, 13, cy + 3, self.steel_hi)
+      self.rf(2, cy - 3, 4, 2, turn == 1 ? self.amber : self.teal)
+      self.rf(12, cy + 2, 4, 2, turn == 1 ? self.teal : self.amber)
+      self.ln(8, cy, 13, cy - 2, self.steel_hi)
+      self.rf(12, cy - 3, 4, 2, self.teal_hi)
     end
-    self.px(9, 3, active ? self.warm : 0x70898A)
+    self.px(8, cy, self.warm)
   end
 
   def offline_scene(elapsed_ms)
-    self.rf(0, 0, 18, 10, 0x0D1722)
-    self.rf(2, 2, 13, 6, 0x283C49)
-    self.rf(3, 3, 11, 4, 0x0C1A27)
-    self.rf(4, 4, 8, 1, 0x41636A)
-    self.rf(4, 6, 5, 1, 0x41636A)
-    self.rf(13, 3, 1, 4, 0x6C8788)
-    self.px(6, 5, self.red)
-    self.px(8, 5, int(self.phase(elapsed_ms) / 400) % 2 == 0 ? self.amber : 0x76493D)
-    self.rf(2, 9, 13, 1, 0x354E54)
+    self.rf(2, 3, 14, 9, 0x4C656E)
+    self.rf(3, 4, 12, 7, 0x000000)
+    self.rf(5, 6, 7, 1, 0x89B8BA)
+    self.px(6, 8, self.red)
+    self.px(9, 8, int(self.phase(elapsed_ms) / 400) % 2 == 0 ? self.amber : 0x76493D)
   end
 
   def page_active(page, view)
@@ -648,15 +606,11 @@ class NetatmoArtwork
   end
 
   def draw_page_scene(page, elapsed_ms, kind, view)
-    if self.expired(self.current_health)
-      self.offline_scene(elapsed_ms)
-      return
-    end
-    var active = self.page_active(page, view)
+    var active = !self.expired(self.current_health) && view != "offline" && self.page_active(page, view)
     if kind == "rain"
       self.rain_scene(elapsed_ms, active)
     elif kind == "wind"
-      self.wind_scene(elapsed_ms, active, self.value(page, "WindAngle"))
+      self.wind_scene(elapsed_ms, active, self.expired(self.current_health) ? nil : self.value(page, "WindAngle"))
     elif kind == "outdoor"
       self.room_scene(elapsed_ms, kind, view, active)
     else
@@ -667,15 +621,16 @@ class NetatmoArtwork
   def paint_page(page, elapsed_ms, index, total, health)
     if !self.palette_ready self.init_palette() end
     self.current_health = health
+    self.show_caption = isinstance(page, map) && page.find("show_name", false) == true
     clear()
     font("small")
-    self.backplate()
     var kind = self.page_string(page, "kind", "indoor")
     var view = self.page_string(page, "view", "offline")
     var caption_color = self.stale(health) ? self.amber : self.teal_hi
     var no_data = self.expired(health) || view == "offline"
     if no_data
-      self.offline_scene(elapsed_ms)
+      self.draw_page_scene(page, elapsed_ms, kind, view)
+      self.ln(0, 0, 2, 2, self.red) self.ln(2, 0, 0, 2, self.red)
       self.name_caption(page, self.red)
       self.text_metric(6, "NO DATA", self.red)
       self.text_metric(14, "OFFLINE", self.red)
@@ -683,8 +638,8 @@ class NetatmoArtwork
       self.draw_page_scene(page, elapsed_ms, kind, view)
       if kind == "rain" && view == "rain_day" self.rain_day_badge() end
       self.name_caption(page, caption_color)
-      var unit = "C"
-      if isinstance(page, map) && page.find("celsius", true) == false unit = "F" end
+      var unit = "°C"
+      if isinstance(page, map) && page.find("celsius", true) == false unit = "°F" end
       var primary = self.stale(health) ? self.amber : self.teal_hi
       if view == "climate"
         self.draw_climate(page, health, unit, primary)
@@ -771,10 +726,10 @@ class NetatmoArtwork
 
   def paint_status(code, elapsed_ms)
     if !self.palette_ready self.init_palette() end
+    self.show_caption = false
     clear()
     font("small")
     var key = self.status_key(code)
-    self.backplate()
     self.status_scene(key, elapsed_ms)
     var top = "DATA"
     var bottom = "WAIT"
@@ -804,6 +759,7 @@ class NetatmoV2 : NetatmoArtwork
   var enabled, station_id
   var page_ms, poll_ms, stale_ms, max_age_ms
   var co2_low, co2_high
+  var show_names
   var quiet, quiet_from, quiet_to
   var modules, module_order
   var pages, frozen_pages, shown_at
@@ -830,6 +786,7 @@ class NetatmoV2 : NetatmoArtwork
     self.co2_low = int(clamp(num(store.get("clow"), 800), 400, 2500))
     self.co2_high = int(clamp(num(store.get("chigh"), 1500), 500, 5000))
     if self.co2_high <= self.co2_low self.co2_high = self.co2_low + 1 end
+    self.show_names = store.get("show_names", false) == true
     self.quiet = store.get("quiet", false) == true
     self.quiet_from = int(clamp(num(store.get("qfrom"), 23), 0, 23))
     self.quiet_to = int(clamp(num(store.get("qto"), 8), 0, 23))
@@ -1128,7 +1085,8 @@ class NetatmoV2 : NetatmoArtwork
       "kind":module.find("kind"), "view":view, "name":module.find("name"), "id":module.find("id"),
       "values":module.find("values"), "stamp":module.find("stamp"), "received":module.find("received"),
       "battery":module.find("battery"), "reachable":module.find("reachable"),
-      "celsius":celsius, "co2_low":self.co2_low, "co2_high":self.co2_high
+      "celsius":celsius, "co2_low":self.co2_low, "co2_high":self.co2_high,
+      "show_name":self.show_names
     }
   end
 

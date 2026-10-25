@@ -85,8 +85,16 @@ def min(a, b) return a < b ? a : b end
 def clamp(v, a, b) return max(a, min(v, b)) end
 def text_width(label)
   var width = 0
-  if size(label) == 0 return 0 end
-  for index : 0 .. size(label) - 1 width += advances.find(label[index .. index], 4) end
+  var index = 0
+  while index < size(label)
+    if label[index .. index + 1] == "°"
+      width += 3
+      index += 2
+    else
+      width += advances.find(label[index .. index], 4)
+      index += 1
+    end
+  end
   return width
 end
 def text_ink_width(label) return text_width(label) end
@@ -174,12 +182,16 @@ check(requests[0].find("opts").find("cap") == 65536, "response cap is explicit a
 deliver(app, load_fixture("stations-v1.json"), 200)
 check(!app.busy && size(app.module_order) == 5, "all five API module types are discovered by ID and type")
 check(size(app.pages) == 10, "five complete modules produce at most two pages each")
+check(app.show_names == false && app.pages[0].find("show_name") == false, "room names are off by default")
 for id : app.module_order check(page_count_for(app, id) <= 2, "module page count is capped at two") end
 check(app.modules.find("synthetic-wind-01").find("values").find("WindStrength") == 0, "zero wind remains a valid reading")
 check(app.modules.find("synthetic-rain-01").find("values").find("Rain") == 0, "zero rain remains a valid reading")
 check(view_exists(app, "range") && view_exists(app, "rain_day") && view_exists(app, "wind_dir"), "type-specific second pages are built")
 app.loop()
 check(size(requests) == 0, "successful poll does not overlap another request")
+app = new_app({"show_names":true})
+deliver(app, load_fixture("stations-v1.json"), 200)
+for page : app.pages check(page.find("show_name") == true, "optional room labels reach every module page") end
 app = new_app({"seconds":99, "every":1, "stale_minutes":240, "max_age_minutes":60, "clow":2000, "chigh":500, "qfrom":99, "qto":-1})
 check(app.page_ms == 12000 && app.poll_ms == 300000, "display and poll settings clamp to declared bounds")
 check(app.max_age_ms == app.stale_ms && app.co2_high == 2001, "expiry and CO2 thresholds preserve valid ordering")
@@ -387,7 +399,7 @@ climate_page.find("values")["Temperature"] = 0
 climate_page.find("values")["Humidity"] = 0
 app.frozen_pages = [climate_page]
 app.shown_at = 0 clock_ms = 0 app.draw()
-check(has_label("T0.0C") && has_label("H0%"), "generated artwork renders zero temperature and humidity as readings")
+check(has_label("0.0°C") && has_label("0%"), "generated artwork renders zero temperature and humidity as readings")
 var rain_page = find_page(app, "rain")
 app.frozen_pages = [rain_page]
 app.draw()
@@ -399,6 +411,6 @@ check(has_label("W0.0KPH"), "generated artwork renders calm wind as a reading")
 rain_page.find("values")["Rain"] = 1
 app.frozen_pages = [rain_page, rain_page]
 app.shown_at = 0 clock_ms = 6000 app.draw()
-check(has_pixel(4, 7, 0xC8F4DD), "each page starts its four-second animation at phase zero")
+check(has_pixel(4, 0, 0xC8F4DD), "each page starts its four-second animation at phase zero")
 
 print("PASS: NetatmoV2 Berry checks=" + str(checks))

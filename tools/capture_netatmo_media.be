@@ -46,6 +46,23 @@ for index : 0 .. size(app.frozen_pages) - 1
 end
 save_netatmo_frames("netatmov2-showcase", showcase)
 
+# Optional labels identify multiple rooms without changing the default look.
+app = new_app({"seconds":4, "show_names":true})
+deliver(app, netatmo_media_sample(), 200)
+app.on_show()
+for index : 0 .. size(app.frozen_pages) - 1
+  var page = app.frozen_pages[index]
+  if page.find("kind") == "extra" && page.find("view") == "climate"
+    var frames = []
+    for frame : 0 .. 39
+      clock_ms = index * 4000 + frame * 100
+      app.draw()
+      frames.push(drawing)
+    end
+    save_netatmo_frames("couch-climate-named", frames)
+  end
+end
+
 for age : [46, 184]
   app = new_app({"seconds":4})
   deliver(app, netatmo_media_sample(), 200)
@@ -80,4 +97,4 @@ for state : ["no-modules", "signin"]
   end
   save_netatmo_frames(state, frames)
 end
-print("Captured ten NetatmoV2 module pages, four diagnostic states and a 40-second synthetic rotation")
+print("Captured ten NetatmoV2 module pages, an optional room label, four diagnostic states and a 40-second synthetic rotation")

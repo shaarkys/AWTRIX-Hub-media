@@ -299,7 +299,7 @@ def render_event() -> None:
 def render_netatmo() -> None:
     names = ["indoor-climate", "indoor-air", "outdoor-climate", "outdoor-range",
              "couch-climate", "couch-air", "rain", "rain-day", "wind", "wind-direction",
-             "stale-outdoor", "expired-outdoor", "no-modules", "signin"]
+             "stale-outdoor", "expired-outdoor", "no-modules", "signin", "couch-climate-named"]
     output = ROOT / "NetatmoV2"
     stills = render_app("NetatmoV2", ROOT / "work/netatmo-captures", output, names, set(names))
     save_still(stills["outdoor-climate"], output / "native/netatmov2-cover.png", output / "netatmov2-cover.png")

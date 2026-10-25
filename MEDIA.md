@@ -20,7 +20,7 @@ Suggested AWTRIX Hub caption:
 - `SolarApp/animations/` — clean 624×192 four-second per-scene GIFs at 10 FPS.
 - `PelletStove/` — the corresponding PelletStove cover, rotation, stills, and scene GIFs. The empty-hopper, clear-error, and power-off states are clean stills only because the source produces no meaningful animation in those states; the remaining dynamic scenes have genuine Berry-driven GIF motion.
 - `EventTrigger/` — seven animated sample events, label variants, native frames, gallery and a staged 28-second showcase. This is an event app: the showcase demonstrates examples and is not an idle rotation.
-- `NetatmoV2/` — ten module pages plus old-data/sign-in/empty-state examples. The 40-second showcase uses the synthetic five-module station with four seconds per page (the installed default is six). No real Netatmo account data or credentials are present.
+- `NetatmoV2/` — ten module pages on black, an optional room-name example, plus old-data/sign-in/empty-state examples. The 40-second showcase uses the synthetic five-module station with four seconds per page (the installed default is six). No real Netatmo account data or credentials are present.
 - `source-notices/` — the unmodified official AWTRIX NG BDF source, its retained license, and provenance notice.
 
 `dist/AWTRIX-Hub-media.zip` contains only the README, provenance/hash manifest, source notices, and user-facing media folders. It intentionally excludes Berry source snapshots, JSON captures, and helper scripts.

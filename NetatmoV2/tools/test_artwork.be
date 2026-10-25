@@ -14,8 +14,15 @@ var advances = {" ":2, "!":2, "'":2, "(":3, ")":3, ",":3, ".":2, ":":2, ";":3,
 
 def text_width(value)
   var width = 0
-  for index : 0 .. size(value) - 1
-    width += advances.find(value[index .. index], 4)
+  var index = 0
+  while index < size(value)
+    if value[index .. index + 1] == "°"
+      width += 3
+      index += 2
+    else
+      width += advances.find(value[index .. index], 4)
+      index += 1
+    end
   end
   return width
 end
@@ -53,9 +60,15 @@ def text(x, y, value, color)
   assert(type(value) == "string", "text value must be a string")
   assert(x == 20 && text_width(value) <= 32, "text outside 32px metric lane: " + value)
   assert(y >= 1 && y <= 15, "text baseline outside panel")
-  for index : 0 .. size(value) - 1
-    var code = value[index .. index]
-    assert(code >= " " && code <= "~", "non-ASCII text emitted")
+  var index = 0
+  while index < size(value)
+    if value[index .. index + 1] == "°"
+      index += 2
+    else
+      var code = value[index .. index]
+      assert(code >= " " && code <= "~", "unsupported text glyph emitted")
+      index += 1
+    end
   end
   text_calls.push([x, y, value, color])
   drawing.push(["text", x, y, value, color])
@@ -121,6 +134,27 @@ var pages = [
   page("indoor", "offline", "Missing", {})
 ]
 
+# Names identify additional rooms only when explicitly enabled. Changing a
+# hidden name must not change a single drawing call in the default layout.
+var unnamed = page("extra", "climate", "COUCH", {"Temperature":23.2, "Humidity":56})
+render(unnamed, 500, 0, 1, "fresh")
+check(has_text_value("23.2°C") && has_text_value("56%"), "climate readings must omit T/H prefixes and include the degree glyph")
+var anonymous_frame = json.dump(drawing)
+unnamed["name"] = "OFFICE"
+render(unnamed, 500, 0, 1, "fresh")
+check(json.dump(drawing) == anonymous_frame, "module names leaked into the default graphic")
+unnamed["show_name"] = true
+render(unnamed, 500, 0, 1, "fresh")
+check(json.dump(drawing) != anonymous_frame, "room-name option did not change the caption layout")
+var labelled_frame = json.dump(drawing)
+unnamed["name"] = "COUCH"
+render(unnamed, 500, 0, 1, "fresh")
+check(json.dump(drawing) != labelled_frame, "distinct rooms are not identifiable with labels on")
+unnamed["celsius"] = false
+unnamed.find("values")["Temperature"] = 0
+render(unnamed, 500, 0, 1, "fresh")
+check(has_text_value("32.0°F"), "Fahrenheit degree/unit rendering is incorrect")
+
 check(artwork.safe_name("Küche") == "KUCHE", "German room name was not transliterated")
 check(artwork.safe_name("Žluť") == "ZLUT", "Czech room name was not transliterated")
 check(artwork.safe_name("Couch 🛋") == "COUCH", "common room name was not preserved")
@@ -138,9 +172,12 @@ for index : 0 .. size(pages) - 1
   render(pages[index], 1750, index, size(pages), "stale")
 end
 
-for index : 0 .. size(pages) - 1
-  for tick : 0 .. 15
-    render(pages[index], tick * 250, index, size(pages), "fresh")
+for named : [false, true]
+  for index : 0 .. size(pages) - 1
+    pages[index]["show_name"] = named
+    for tick : 0 .. 15
+      render(pages[index], tick * 250, index, size(pages), "fresh")
+    end
   end
 end
 

@@ -2,6 +2,8 @@
 
 NetatmoV2 discovers your Netatmo Weather Station and its attached modules and rotates through **one or two pages per module** on the TC002's 52 x 16 display. Built-in shaded pixel art identifies indoor, outdoor, additional indoor/Couch, rain and wind modules. There are no icon names, icon numbers or downloads to configure.
 
+The canvas is **black**. Colored module graphics and readings stand on it without tinted panels, dividers or permanent name captions. Climate pages show plain readings such as **23.2°C** and **56%**, with Celsius/Fahrenheit following the clock's setting.
+
 [Installable script](NetatmoV2.ax) · [Gallery](gallery-contact-sheet.png) · [Simulated rotation](netatmov2-showcase.gif)
 
 ## Why the supplied Netatmo script could be empty
@@ -29,7 +31,9 @@ Credentials and tokens stay in the native sign-in system. They are not read by t
 
 ## Discovery and module switches
 
-The API's stable module types determine the view; room names are labels, not matching rules. The additional indoor module can therefore be named `Couch`, `Cauch` or anything else without losing its readings. Artwork uses a shortened safe label; the API ID distinguishes modules, even if names are duplicated.
+The API's stable module types determine the view; names never control matching. The additional indoor module can therefore be named `Couch`, `Cauch` or anything else without losing its readings. Distinct API IDs identify modules even when names are duplicated.
+
+**Show room names** defaults to **Off**. The infographic identifies the module type, and uses the full available height while names are hidden. Enable this option when you have multiple modules in different rooms or locations; a shortened safe room label then appears below the graphic. Every discovered module still gets its own readings and pages with the option either on or off. The gallery includes a `couch-climate-named` example of this optional presentation.
 
 | Switch | API type | Pages, if values exist |
 | --- | --- | --- |

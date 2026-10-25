@@ -38,7 +38,7 @@
     },
     {
       "path": "tools/render_media.py",
-      "sha256": "e1443a8298585a84a8ce737befaf28e3fff5b491522923049c673fb0e2a1f012"
+      "sha256": "1432e8aa6dc41f4a00fdb814500f666083c3902f66af5acf4e6126acf15cd52d"
     },
     {
       "path": "source-notices/awtrix-small.bdf",
@@ -82,15 +82,15 @@
     },
     {
       "path": "NetatmoV2/NetatmoV2.ax",
-      "sha256": "ae4173cb170dba5a05fd79a1a5ad39430516b4f1e108b462233864484bdb927c"
+      "sha256": "f7c936d2dd96e43121897a41ca45f9eabdaffe1c8b241a9e87c015e944e0fb0d"
     },
     {
       "path": "NetatmoV2/netatmo_core.be.inc",
-      "sha256": "d011cba9d205c47ae1b0f077f28406faa1b9f0743e1ce8a9e0173a454edaa032"
+      "sha256": "2a34960120057352cc63ca90204746c3a9d3dc2796c194ee559127cfe7780f1b"
     },
     {
       "path": "NetatmoV2/netatmo_graphics.be.inc",
-      "sha256": "7e1880a9b8f1a9d2522d0fb8d69c3a946861af28ec4c75f1528007cfd32301f0"
+      "sha256": "d2cd87b2cc982adf26fd3ff9a6056dfb65b211cd4fa30fabdc6c1767a4aa9327"
     },
     {
       "path": "NetatmoV2/build_netatmov2.py",
@@ -98,15 +98,15 @@
     },
     {
       "path": "NetatmoV2/tools/test_netatmov2.be",
-      "sha256": "d94021ee8d95ba149868ab9b7904112b3bd07f006ddb4750e162e56415c351cc"
+      "sha256": "77fa99b064ec4b075c169d9555ff3992a08c1637f30a1df32f82ebe836689adf"
     },
     {
       "path": "NetatmoV2/tools/test_artwork.be",
-      "sha256": "5c0cf31f19d977269b421e35fe8d03460f76356b7aea7a7966d2f6722a6efc6d"
+      "sha256": "8e3b178950ce610710ce809a18763860c5a4fe1f8f7cdb1862cf4263b5db2750"
     },
     {
       "path": "tools/capture_netatmo_media.be",
-      "sha256": "2b50e895742b842fa3fa39b616128870fe5ac9267bf972b5f340690a9c11674f"
+      "sha256": "357780c3c9e5329de37c6ecffaed449343605c00c5cdf57e3fced545ab6574c4"
     },
     {
       "path": "NetatmoV2/fixtures/stations-v1.json",
@@ -126,7 +126,7 @@
     },
     {
       "path": "NetatmoV2/tools/verify.py",
-      "sha256": "706d497fb579dc12f99d03f94c167bed1453718b48f5f4f3f4c8760a449df101"
+      "sha256": "997531f0be3f636099c447fd0e643d64ffbcc0dcd7d7c50cb3c0f939a7b95871"
     }
   ]
 }
