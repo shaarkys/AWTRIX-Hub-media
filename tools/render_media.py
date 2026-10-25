@@ -286,18 +286,31 @@ def render_pellet() -> None:
     )
 
 
+def render_event() -> None:
+    scenes = ["motion", "mail_received", "mail_collected", "heat", "water", "doorbell", "garage"]
+    names = scenes + [scene + "-labels" for scene in scenes]
+    output = ROOT / "EventTrigger"
+    stills = render_app("EventTrigger", ROOT / "work/event-captures", output, names, set(names))
+    save_still(stills["doorbell"], output / "native/eventtrigger-cover.png", output / "eventtrigger-cover.png")
+    make_contact_sheet("Event trigger - simulated example scenes", [(name, stills[name]) for name in names],
+                       output / "gallery-contact-sheet.png", columns=2)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--solar", action="store_true", help="render SolarApp captures")
     parser.add_argument("--pellet", action="store_true", help="render PelletStove captures")
-    parser.add_argument("--all", action="store_true", help="render both capture sets")
+    parser.add_argument("--event", action="store_true", help="render Event trigger captures")
+    parser.add_argument("--all", action="store_true", help="render all capture sets")
     args = parser.parse_args()
-    if not (args.solar or args.pellet or args.all):
-        parser.error("choose --solar, --pellet, or --all")
+    if not (args.solar or args.pellet or args.event or args.all):
+        parser.error("choose --solar, --pellet, --event, or --all")
     if args.solar or args.all:
         render_solar()
     if args.pellet or args.all:
         render_pellet()
+    if args.event or args.all:
+        render_event()
     print("Rendered requested media with the official BDF font")
 
 

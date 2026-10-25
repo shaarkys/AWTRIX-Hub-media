@@ -6,10 +6,13 @@ Standalone MQTT display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels*
 | --- | --- | --- | --- | --- |
 | SolarApp | [SolarApp.ax](SolarApp/SolarApp.ax) | [Guide](SolarApp/README.md) | [Gallery](SolarApp/gallery-contact-sheet.png) | [Rotation GIF](SolarApp/solarapp-showcase.gif) |
 | PelletStove | [PelletStove.ax](PelletStove/PelletStove.ax) | [Guide](PelletStove/README.md) | [Gallery](PelletStove/gallery-contact-sheet.png) | [Rotation GIF](PelletStove/pelletstove-showcase.gif) |
+| Event trigger | [EventTrigger.ax](EventTrigger/EventTrigger.ax) | [Guide](EventTrigger/README.md) | [Gallery](EventTrigger/gallery-contact-sheet.png) | [Example events GIF](EventTrigger/eventtrigger-showcase.gif) |
 
 **SolarApp** rotates through solar production/yield, battery charge, measured house load, and signed grid import/export. Solar is skipped when production is zero or stale. The house source graphic is illustrative; it does not calculate an energy split.
 
 **PelletStove** rotates through stove mode/status, current/target temperatures, pellets, cleaning, ash usage, and errors. It includes cooling-fan and microfiber-cloth animations, proportional 30 kg fuel levels, urgent cleaning/ash blinking, a standby page showing current room temperature, and the optional temperature-only standby turn. Valid false error readings clear old faults even in standby, OFF, or before fresh power/mode messages arrive.
+
+**Event trigger** displays animated scenes for motion, received/collected mail, heat, water leak, doorbell, and garage opening. Graphics are text-free and silent by default, with optional labels. It requests a turn on receiving a matching event and stays out of the rotation while idle. Use one auto-routing copy or configure separate copies for individual sensor topics.
 
 Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing is configured in Homey or another publisher. These scripts subscribe to data; they do not control the stove or inverter.
 
@@ -17,6 +20,7 @@ Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing
 
 - `SolarApp/`: active SolarApp sources, generated deliverables, tests, guide and media.
 - `PelletStove/`: active PelletStove source, frozen Homey input contract, tests, guide and media.
+- `EventTrigger/`: generated event app, core/artwork sources, input and queue tests, guide and media.
 - `tools/`: portable build, Berry capture, media rendering, packaging and validation.
 - `source-notices/`: unmodified upstream font, its license and provenance.
 - `dist/AWTRIX-Hub-media.zip`: current publication media bundle.
@@ -35,7 +39,7 @@ $env:BERRY = 'C:\path\to\berry32.exe'
 python tools/build.py --berry $env:BERRY
 ```
 
-The command regenerates SolarApp without changing its bytes, runs both mocked Berry suites, checks the frozen PelletStove input contract, captures the scripts with the official small-font metrics, renders the PNG/GIF media, writes relative source hashes, rebuilds the publication ZIP and validates every decoded GIF timestamp. All inputs come from this checkout. Full cold-build verification also checks that ignored `work/` data is unnecessary.
+The command regenerates SolarApp and Event trigger, runs the mocked Berry suites, checks the frozen PelletStove input contract, captures the scripts with the official small-font metrics, renders the PNG/GIF media, writes relative source hashes, rebuilds the publication ZIP and validates every decoded GIF timestamp. All inputs come from this checkout. Full cold-build verification also checks that ignored `work/` data is unnecessary.
 
 Individual commands are documented in each app guide. `python tools/validate_media.py` checks an existing capture/export; run the full build first on a new clone.
 

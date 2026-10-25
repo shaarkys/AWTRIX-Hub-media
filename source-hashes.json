@@ -38,7 +38,7 @@
     },
     {
       "path": "tools/render_media.py",
-      "sha256": "d33f4d8e7ca1599c5190e3b83386672cb344e27d5cf7d47f2d0fa4dd1d3b76ee"
+      "sha256": "d5b6786d66fcd6bf7934e17c69a379631ef2a88dbe797c3686a27a52c87c1cda"
     },
     {
       "path": "source-notices/awtrix-small.bdf",
@@ -51,6 +51,34 @@
     {
       "path": "source-notices/FONT-NOTICE.md",
       "sha256": "157821047384b1c46b4b6f18dcf9d0027cb21193707ef22ab4acdcfc5884e5c6"
+    },
+    {
+      "path": "EventTrigger/EventTrigger.ax",
+      "sha256": "eacb968ef85799c38027ea92edf53244c637489e064c58960274d01e200ae51f"
+    },
+    {
+      "path": "EventTrigger/event_core.be.inc",
+      "sha256": "232577e31044df7081564da8ea9194afd9752a5bfb807dc8febe3e79a9f366a8"
+    },
+    {
+      "path": "EventTrigger/event_graphics.be.inc",
+      "sha256": "9b9f32411ab58162e30bce9d4ed028ae6e938374ed01a194302b03a98ce015c6"
+    },
+    {
+      "path": "EventTrigger/build_eventtrigger.py",
+      "sha256": "f3da1fbabf3502564a8c457aba945455befad14dfe6bde241cd17c1cbf517658"
+    },
+    {
+      "path": "EventTrigger/tools/test_eventtrigger.be",
+      "sha256": "82766a11ecb79bd16379c417fe911236ca7b85b34d0efb0d2a923416fb2b3a3e"
+    },
+    {
+      "path": "tools/capture_event_media.be",
+      "sha256": "00ff101bb2e56eea546821c48d5e599a7142da09ec8f3cc8f92dd5f29c6b9e26"
+    },
+    {
+      "path": "EventTrigger/tools/test_artwork.be",
+      "sha256": "9eb302840ecc7e8a867d3f30af2d67302d6aafd34f7c5e4fa8b49852b1345dc0"
     }
   ]
 }

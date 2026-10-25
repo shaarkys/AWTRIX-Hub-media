@@ -19,6 +19,7 @@ Suggested AWTRIX Hub caption:
 - `SolarApp/screenshots/` — clean 1040×320 stills; matching native 52×16 files are in `SolarApp/native/`.
 - `SolarApp/animations/` — clean 624×192 four-second per-scene GIFs at 10 FPS.
 - `PelletStove/` — the corresponding PelletStove cover, rotation, stills, and scene GIFs. The empty-hopper, clear-error, and power-off states are clean stills only because the source produces no meaningful animation in those states; the remaining dynamic scenes have genuine Berry-driven GIF motion.
+- `EventTrigger/` — seven animated sample events, label variants, native frames, gallery and a staged 28-second showcase. This is an event app: the showcase demonstrates examples and is not an idle rotation.
 - `source-notices/` — the unmodified official AWTRIX NG BDF source, its retained license, and provenance notice.
 
 `dist/AWTRIX-Hub-media.zip` contains only the README, provenance/hash manifest, source notices, and user-facing media folders. It intentionally excludes Berry source snapshots, JSON captures, and helper scripts.
@@ -35,6 +36,8 @@ Suggested AWTRIX Hub caption:
 SolarApp scenes use the requested sample values: 2500 W production, 12345 Wh daily yield, 900 W house load, 76% SOC, +850 W battery charging, and −420 W grid export. Signed battery/grid values are interpreted using the script's default `charge_positive` and `import_positive` conventions. The house-unknown scene uses 0 W solar, 0 W battery, 0 W grid, and 3000 W house load; the lightning icon is the script's source-unknown activity graphic and does not infer an energy split.
 
 PelletStove scenes use the Berry harness's sample state: on/off enabled, heating mode, 21.4°C actual / 22.0°C target, 8.4 kg pellets, 32.5 h cleaning interval, 45% ash usage, and clear error unless the scene says otherwise. The `standby-status` still shows the ordinary `STANDBY` page with live current temperature 24.0C. The separate optional standby scene sets `standby_skip=true` (the setting defaults to `false`), requires power `Yes`, enters mode `STANDBY`, establishes the 21.4°C / 22.0°C baseline, then feeds a changed 21.5°C reading; the captured `SET22.0C` temperature-only visit is the source behavior. It does not claim that the physical script was skipped on a device.
+
+Event trigger samples publish active pulses for motion, mail received, mail collected, heat, water, doorbell and garage. Seven full-panel scenes and seven labelled variants each cover four seconds of elapsed animation. The combined showcase stages those seven full-panel examples. It does not imply the app cycles through all events without MQTT input. Artwork is generated procedurally by the app; no external scene icons are loaded.
 
 ## Provenance
 

@@ -1,4 +1,4 @@
-"""Verify both apps and rebuild simulated Hub media from this checkout only."""
+"""Verify all apps and rebuild simulated Hub media from this checkout only."""
 
 from __future__ import annotations
 
@@ -32,9 +32,11 @@ def resolve_berry(value: str | None) -> str:
 def prepare_capture(app: str, capture_name: str) -> Path:
     work = ROOT / "work"
     work.mkdir(exist_ok=True)
-    for folder in ("captures", "pellet-captures"):
+    for folder in ("captures", "pellet-captures", "event-captures"):
         (work / folder).mkdir(exist_ok=True)
-    test = ROOT / app / ("test_solarapp.be" if app == "SolarApp" else "tools/test_pelletstove.be")
+    test_paths = {"SolarApp": "test_solarapp.be", "PelletStove": "tools/test_pelletstove.be",
+                  "EventTrigger": "tools/test_eventtrigger.be"}
+    test = ROOT / app / test_paths[app]
     harness = test.read_text(encoding="utf-8")
     prefix = harness.split("var app = new_app({})", 1)[0]
     if prefix == harness:
@@ -69,6 +71,10 @@ def write_hashes() -> None:
         "tools/capture_pellet_media.be", "tools/render_media.py",
         "source-notices/awtrix-small.bdf", "source-notices/FONT-LICENSE.txt",
         "source-notices/FONT-NOTICE.md",
+        "EventTrigger/EventTrigger.ax", "EventTrigger/event_core.be.inc",
+        "EventTrigger/event_graphics.be.inc", "EventTrigger/build_eventtrigger.py",
+        "EventTrigger/tools/test_eventtrigger.be", "tools/capture_event_media.be",
+        "EventTrigger/tools/test_artwork.be",
     ]
     sources = [{"path": name, "sha256": hashlib.sha256((ROOT / name).read_bytes()).hexdigest()} for name in paths]
     (ROOT / "source-hashes.json").write_text(json.dumps({"sources": sources}, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -89,14 +95,19 @@ def main() -> None:
     run([berry, "test_solarapp.be"], ROOT / "SolarApp")
     run([berry, "tools/test_pelletstove.be"], ROOT / "PelletStove")
     run([sys.executable, "tools/verify.py"], ROOT / "PelletStove")
-    for app, scenario in [("SolarApp", "capture_solar_media.be"), ("PelletStove", "capture_pellet_media.be")]:
+    run([sys.executable, "build_eventtrigger.py"], ROOT / "EventTrigger")
+    run([berry, "tools/test_eventtrigger.be"], ROOT / "EventTrigger")
+    run([sys.executable, "tools/verify.py"], ROOT / "EventTrigger")
+    run([berry, "EventTrigger/tools/test_artwork.be"])
+    for app, scenario in [("SolarApp", "capture_solar_media.be"), ("PelletStove", "capture_pellet_media.be"),
+                          ("EventTrigger", "capture_event_media.be")]:
         capture = prepare_capture(app, scenario)
         run([berry, capture.name], capture.parent)
     run([sys.executable, "tools/render_media.py", "--all"])
     write_hashes()
     run([sys.executable, "tools/package_media.py"])
     run([sys.executable, "tools/validate_media.py"])
-    print("PASS: standalone source verification, both Berry suites, captures, media, source hashes and publication ZIP")
+    print("PASS: standalone source verification, all Berry suites, captures, media, source hashes and publication ZIP")
 
 
 if __name__ == "__main__":
