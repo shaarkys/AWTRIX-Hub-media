@@ -38,7 +38,7 @@
     },
     {
       "path": "tools/render_media.py",
-      "sha256": "d5b6786d66fcd6bf7934e17c69a379631ef2a88dbe797c3686a27a52c87c1cda"
+      "sha256": "e1443a8298585a84a8ce737befaf28e3fff5b491522923049c673fb0e2a1f012"
     },
     {
       "path": "source-notices/awtrix-small.bdf",
@@ -62,7 +62,7 @@
     },
     {
       "path": "EventTrigger/event_graphics.be.inc",
-      "sha256": "9b9f32411ab58162e30bce9d4ed028ae6e938374ed01a194302b03a98ce015c6"
+      "sha256": "f96158f5b18b0c401442f8605a368877d5391293df74bc6ae7b6aec2bdfc2bd9"
     },
     {
       "path": "EventTrigger/build_eventtrigger.py",
@@ -79,6 +79,54 @@
     {
       "path": "EventTrigger/tools/test_artwork.be",
       "sha256": "9eb302840ecc7e8a867d3f30af2d67302d6aafd34f7c5e4fa8b49852b1345dc0"
+    },
+    {
+      "path": "NetatmoV2/NetatmoV2.ax",
+      "sha256": "ae4173cb170dba5a05fd79a1a5ad39430516b4f1e108b462233864484bdb927c"
+    },
+    {
+      "path": "NetatmoV2/netatmo_core.be.inc",
+      "sha256": "d011cba9d205c47ae1b0f077f28406faa1b9f0743e1ce8a9e0173a454edaa032"
+    },
+    {
+      "path": "NetatmoV2/netatmo_graphics.be.inc",
+      "sha256": "7e1880a9b8f1a9d2522d0fb8d69c3a946861af28ec4c75f1528007cfd32301f0"
+    },
+    {
+      "path": "NetatmoV2/build_netatmov2.py",
+      "sha256": "957933c05a7887e2fa09d7ebd2e655f395deb261e3c059bb00fe089aa35cff90"
+    },
+    {
+      "path": "NetatmoV2/tools/test_netatmov2.be",
+      "sha256": "d94021ee8d95ba149868ab9b7904112b3bd07f006ddb4750e162e56415c351cc"
+    },
+    {
+      "path": "NetatmoV2/tools/test_artwork.be",
+      "sha256": "5c0cf31f19d977269b421e35fe8d03460f76356b7aea7a7966d2f6722a6efc6d"
+    },
+    {
+      "path": "tools/capture_netatmo_media.be",
+      "sha256": "2b50e895742b842fa3fa39b616128870fe5ac9267bf972b5f340690a9c11674f"
+    },
+    {
+      "path": "NetatmoV2/fixtures/stations-v1.json",
+      "sha256": "fac4aaa2534b366469ec756386d5d157bff3c2c8a5d8b8b0b6b9792bdb2fe7bb"
+    },
+    {
+      "path": "NetatmoV2/fixtures/stations-empty.json",
+      "sha256": "9b8e5bfe10ee02a45194b41790d98ba4eb61cb887189e831be483ba501bbc8c6"
+    },
+    {
+      "path": "NetatmoV2/fixtures/stations-partial.json",
+      "sha256": "95d3197f7e1b732c1ab77b0b820fa0c2d8649e2182a3b91bb82531ffc08d756e"
+    },
+    {
+      "path": "NetatmoV2/fixtures/stations-invalid-values.json",
+      "sha256": "fd81aaa224f4690710923fb41029db6f33f8d31ea0188f19363e189b51a151bb"
+    },
+    {
+      "path": "NetatmoV2/tools/verify.py",
+      "sha256": "706d497fb579dc12f99d03f94c167bed1453718b48f5f4f3f4c8760a449df101"
     }
   ]
 }

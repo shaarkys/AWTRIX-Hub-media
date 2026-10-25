@@ -32,10 +32,10 @@ def resolve_berry(value: str | None) -> str:
 def prepare_capture(app: str, capture_name: str) -> Path:
     work = ROOT / "work"
     work.mkdir(exist_ok=True)
-    for folder in ("captures", "pellet-captures", "event-captures"):
+    for folder in ("captures", "pellet-captures", "event-captures", "netatmo-captures"):
         (work / folder).mkdir(exist_ok=True)
     test_paths = {"SolarApp": "test_solarapp.be", "PelletStove": "tools/test_pelletstove.be",
-                  "EventTrigger": "tools/test_eventtrigger.be"}
+                  "EventTrigger": "tools/test_eventtrigger.be", "NetatmoV2": "tools/test_netatmov2.be"}
     test = ROOT / app / test_paths[app]
     harness = test.read_text(encoding="utf-8")
     prefix = harness.split("var app = new_app({})", 1)[0]
@@ -75,8 +75,21 @@ def write_hashes() -> None:
         "EventTrigger/event_graphics.be.inc", "EventTrigger/build_eventtrigger.py",
         "EventTrigger/tools/test_eventtrigger.be", "tools/capture_event_media.be",
         "EventTrigger/tools/test_artwork.be",
+        "NetatmoV2/NetatmoV2.ax", "NetatmoV2/netatmo_core.be.inc",
+        "NetatmoV2/netatmo_graphics.be.inc", "NetatmoV2/build_netatmov2.py",
+        "NetatmoV2/tools/test_netatmov2.be", "NetatmoV2/tools/test_artwork.be",
+        "tools/capture_netatmo_media.be", "NetatmoV2/fixtures/stations-v1.json",
+        "NetatmoV2/fixtures/stations-empty.json", "NetatmoV2/fixtures/stations-partial.json",
+        "NetatmoV2/fixtures/stations-invalid-values.json", "NetatmoV2/tools/verify.py",
     ]
-    sources = [{"path": name, "sha256": hashlib.sha256((ROOT / name).read_bytes()).hexdigest()} for name in paths]
+    sources = []
+    for name in paths:
+        data = (ROOT / name).read_bytes()
+        # .gitattributes stores these source formats with LF. A manifest built
+        # from CRLF working bytes would fail after a fresh Git checkout.
+        if Path(name).suffix in {".be", ".inc", ".py", ".json", ".md"} and b"\r\n" in data:
+            raise ValueError(f"Convert {name} to LF before hashing, as required by .gitattributes")
+        sources.append({"path": name, "sha256": hashlib.sha256(data).hexdigest()})
     (ROOT / "source-hashes.json").write_text(json.dumps({"sources": sources}, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
@@ -99,8 +112,12 @@ def main() -> None:
     run([berry, "tools/test_eventtrigger.be"], ROOT / "EventTrigger")
     run([sys.executable, "tools/verify.py"], ROOT / "EventTrigger")
     run([berry, "EventTrigger/tools/test_artwork.be"])
+    run([sys.executable, "build_netatmov2.py"], ROOT / "NetatmoV2")
+    run([berry, "tools/test_netatmov2.be"], ROOT / "NetatmoV2")
+    run([sys.executable, "tools/verify.py"], ROOT / "NetatmoV2")
+    run([berry, "NetatmoV2/tools/test_artwork.be"])
     for app, scenario in [("SolarApp", "capture_solar_media.be"), ("PelletStove", "capture_pellet_media.be"),
-                          ("EventTrigger", "capture_event_media.be")]:
+                          ("EventTrigger", "capture_event_media.be"), ("NetatmoV2", "capture_netatmo_media.be")]:
         capture = prepare_capture(app, scenario)
         run([berry, capture.name], capture.parent)
     run([sys.executable, "tools/render_media.py", "--all"])

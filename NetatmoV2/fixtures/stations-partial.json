@@ -1,0 +1,39 @@
+{
+  "body": {
+    "devices": [
+      {
+        "_id": "synthetic-station-01",
+        "type": "NAMain",
+        "station_name": "Météo Demo",
+        "dashboard_data": {
+          "time_utc": 1700000600,
+          "Temperature": 22.0,
+          "Humidity": 43
+        },
+        "modules": [
+          {
+            "_id": "synthetic-rain-01",
+            "type": "NAModule3",
+            "module_name": "Pluie zéro",
+            "dashboard_data": {
+              "time_utc": 1700000600,
+              "Rain": 0,
+              "sum_rain_1": 0,
+              "sum_rain_24": 5.1
+            }
+          },
+          {
+            "_id": "synthetic-extra-01",
+            "type": "NAModule4",
+            "module_name": "Couch renamed",
+            "dashboard_data": {
+              "time_utc": "not-a-number",
+              "Temperature": "21.0",
+              "CO2": null
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

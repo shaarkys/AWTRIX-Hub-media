@@ -1,12 +1,13 @@
 # AWTRIX NG apps and Hub media
 
-Standalone MQTT display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels**. This repository is the single working location for the scripts, configuration guides, source generators, tests, and publication media.
+Standalone display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels**, using MQTT or native cloud sign-in. This repository is the single working location for the scripts, configuration guides, source generators, tests, and publication media.
 
 | App | Installable script | Configure | Screenshots | Animation |
 | --- | --- | --- | --- | --- |
 | SolarApp | [SolarApp.ax](SolarApp/SolarApp.ax) | [Guide](SolarApp/README.md) | [Gallery](SolarApp/gallery-contact-sheet.png) | [Rotation GIF](SolarApp/solarapp-showcase.gif) |
 | PelletStove | [PelletStove.ax](PelletStove/PelletStove.ax) | [Guide](PelletStove/README.md) | [Gallery](PelletStove/gallery-contact-sheet.png) | [Rotation GIF](PelletStove/pelletstove-showcase.gif) |
 | Event trigger | [EventTrigger.ax](EventTrigger/EventTrigger.ax) | [Guide](EventTrigger/README.md) | [Gallery](EventTrigger/gallery-contact-sheet.png) | [Example events GIF](EventTrigger/eventtrigger-showcase.gif) |
+| NetatmoV2 | [NetatmoV2.ax](NetatmoV2/NetatmoV2.ax) | [Guide](NetatmoV2/README.md) | [Gallery](NetatmoV2/gallery-contact-sheet.png) | [Module rotation GIF](NetatmoV2/netatmov2-showcase.gif) |
 
 **SolarApp** rotates through solar production/yield, battery charge, measured house load, and signed grid import/export. Solar is skipped when production is zero or stale. The house source graphic is illustrative; it does not calculate an energy split.
 
@@ -14,13 +15,16 @@ Standalone MQTT display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels*
 
 **Event trigger** displays animated scenes for motion, received/collected mail, heat, water leak, doorbell, and garage opening. Graphics are text-free and silent by default, with optional labels. It requests a turn on receiving a matching event and stays out of the rotation while idle. Use one auto-routing copy or configure separate copies for individual sensor topics.
 
-Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing is configured in Homey or another publisher. These scripts subscribe to data; they do not control the stove or inverter.
+**NetatmoV2** discovers indoor, outdoor, additional indoor/Couch, rain and wind modules through Netatmo's cloud API. It shows at most two pages per module with built-in artwork, native OAuth sign-in, V1-friendly data aging, and useful empty/error states. Five module switches control visibility; no icons need configuring.
+
+Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing is configured in Homey or another publisher. NetatmoV2 uses its native Sign-in settings. These scripts display data; they do not control the stove, inverter or weather station.
 
 ## Layout
 
 - `SolarApp/`: active SolarApp sources, generated deliverables, tests, guide and media.
 - `PelletStove/`: active PelletStove source, frozen Homey input contract, tests, guide and media.
 - `EventTrigger/`: generated event app, core/artwork sources, input and queue tests, guide and media.
+- `NetatmoV2/`: generated weather-station app, discovery/polling and artwork sources, synthetic fixtures, tests, guide and media.
 - `tools/`: portable build, Berry capture, media rendering, packaging and validation.
 - `source-notices/`: unmodified upstream font, its license and provenance.
 - `dist/AWTRIX-Hub-media.zip`: current publication media bundle.
@@ -39,13 +43,13 @@ $env:BERRY = 'C:\path\to\berry32.exe'
 python tools/build.py --berry $env:BERRY
 ```
 
-The command regenerates SolarApp and Event trigger, runs the mocked Berry suites, checks the frozen PelletStove input contract, captures the scripts with the official small-font metrics, renders the PNG/GIF media, writes relative source hashes, rebuilds the publication ZIP and validates every decoded GIF timestamp. All inputs come from this checkout. Full cold-build verification also checks that ignored `work/` data is unnecessary.
+The command regenerates SolarApp, Event trigger and NetatmoV2, runs the mocked Berry suites, checks the frozen PelletStove input contract, captures the scripts with the official small-font metrics, renders the PNG/GIF media, writes relative source hashes, rebuilds the publication ZIP and validates every decoded GIF timestamp. All inputs come from this checkout. Full cold-build verification also checks that ignored `work/` data is unnecessary.
 
 Individual commands are documented in each app guide. `python tools/validate_media.py` checks an existing capture/export; run the full build first on a new clone.
 
 ## Media and device verification
 
-All images here are **simulated previews using sample MQTT data**, not physical TC002 recordings. Exact hardware colors, brightness, timing, firmware integration and MQTT delivery remain unverified by the offline build. See [MEDIA.md](MEDIA.md) for dimensions, sample values and a caption to use when uploading to the Hub. Publishing this GitHub repository does not upload anything to AWTRIX Hub or install anything on a device.
+All images here are **simulated previews using synthetic MQTT or weather-station data**, not physical TC002 recordings. Exact hardware colors, brightness, timing, firmware integration, MQTT delivery and live Netatmo access remain unverified by the offline build. See [MEDIA.md](MEDIA.md) for dimensions, sample values and a caption to use when uploading to the Hub. Publishing this GitHub repository does not upload anything to AWTRIX Hub or install anything on a device.
 
 [TC002 color-calibration notes](docs/TC002-display-calibration.md) preserve the latest suggested trial settings and the distinction between LED output and the raw preview.
 

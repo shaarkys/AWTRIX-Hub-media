@@ -66,7 +66,7 @@ def check_decoded_gif(gif_path: Path, capture_path: Path) -> None:
 def check_images(app: str, expected_scene_count: int, expected_animation_count: int, expected_showcase_ms: int) -> int:
     app_root = ROOT / app
     capture_dir = ROOT / "work" / {"SolarApp": "captures", "PelletStove": "pellet-captures",
-                                   "EventTrigger": "event-captures"}[app]
+                                   "EventTrigger": "event-captures", "NetatmoV2": "netatmo-captures"}[app]
     native = sorted((app_root / "native").glob("*.png"))
     screenshots = sorted((app_root / "screenshots").glob("*.png"))
     gifs = sorted((app_root / "animations").glob("*.gif"))
@@ -172,6 +172,8 @@ def check_zip() -> int:
             fail("package has no PelletStove media")
         if not any(name.startswith("EventTrigger/") for name in names):
             fail("package has no Event trigger media")
+        if not any(name.startswith("NetatmoV2/") for name in names):
+            fail("package has no NetatmoV2 media")
         if any(name.startswith(forbidden) for name in names):
             fail("package contains work/captures/tools intermediate files")
         return len(names)
@@ -181,9 +183,10 @@ def main() -> None:
     solar_checked = check_images("SolarApp", 11, 11, 20000)
     pellet_checked = check_images("PelletStove", 16, 12, 30000)
     event_checked = check_images("EventTrigger", 14, 14, 28000)
+    netatmo_checked = check_images("NetatmoV2", 14, 14, 40000)
     check_manifest_sources()
     package_files = check_zip()
-    print(f"PASS: {solar_checked + pellet_checked + event_checked} AWTRIX image assets; source hashes; ZIP entries={package_files}")
+    print(f"PASS: {solar_checked + pellet_checked + event_checked + netatmo_checked} AWTRIX image assets; source hashes; ZIP entries={package_files}")
 
 
 if __name__ == "__main__":

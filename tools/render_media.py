@@ -296,21 +296,35 @@ def render_event() -> None:
                        output / "gallery-contact-sheet.png", columns=2)
 
 
+def render_netatmo() -> None:
+    names = ["indoor-climate", "indoor-air", "outdoor-climate", "outdoor-range",
+             "couch-climate", "couch-air", "rain", "rain-day", "wind", "wind-direction",
+             "stale-outdoor", "expired-outdoor", "no-modules", "signin"]
+    output = ROOT / "NetatmoV2"
+    stills = render_app("NetatmoV2", ROOT / "work/netatmo-captures", output, names, set(names))
+    save_still(stills["outdoor-climate"], output / "native/netatmov2-cover.png", output / "netatmov2-cover.png")
+    make_contact_sheet("NetatmoV2 - simulated module pages", [(name, stills[name]) for name in names],
+                       output / "gallery-contact-sheet.png", columns=2)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--solar", action="store_true", help="render SolarApp captures")
     parser.add_argument("--pellet", action="store_true", help="render PelletStove captures")
     parser.add_argument("--event", action="store_true", help="render Event trigger captures")
+    parser.add_argument("--netatmo", action="store_true", help="render NetatmoV2 captures")
     parser.add_argument("--all", action="store_true", help="render all capture sets")
     args = parser.parse_args()
-    if not (args.solar or args.pellet or args.event or args.all):
-        parser.error("choose --solar, --pellet, --event, or --all")
+    if not (args.solar or args.pellet or args.event or args.netatmo or args.all):
+        parser.error("choose --solar, --pellet, --event, --netatmo, or --all")
     if args.solar or args.all:
         render_solar()
     if args.pellet or args.all:
         render_pellet()
     if args.event or args.all:
         render_event()
+    if args.netatmo or args.all:
+        render_netatmo()
     print("Rendered requested media with the official BDF font")
 
 

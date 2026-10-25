@@ -17,7 +17,7 @@ def publication_files() -> dict[str, Path]:
     for path in (ROOT / "source-notices").iterdir():
         if path.is_file():
             files[path.relative_to(ROOT).as_posix()] = path
-    for app in ("SolarApp", "PelletStove", "EventTrigger"):
+    for app in ("SolarApp", "PelletStove", "EventTrigger", "NetatmoV2"):
         app_root = ROOT / app
         candidates = [app_root / name for name in (
             f"{app.lower()}-cover.png", f"{app.lower()}-showcase.gif", "gallery-contact-sheet.png"

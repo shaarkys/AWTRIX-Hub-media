@@ -1,6 +1,6 @@
 # AWTRIX Hub publication media
 
-This folder contains clean upload-ready PNG screenshots and animated GIF previews for the SolarApp and PelletStove AWTRIX NG scripts.
+This folder contains PNG screenshots and animated GIF previews for SolarApp, PelletStove, Event trigger and NetatmoV2 AWTRIX NG scripts.
 
 ## Important disclosure
 
@@ -20,6 +20,7 @@ Suggested AWTRIX Hub caption:
 - `SolarApp/animations/` — clean 624×192 four-second per-scene GIFs at 10 FPS.
 - `PelletStove/` — the corresponding PelletStove cover, rotation, stills, and scene GIFs. The empty-hopper, clear-error, and power-off states are clean stills only because the source produces no meaningful animation in those states; the remaining dynamic scenes have genuine Berry-driven GIF motion.
 - `EventTrigger/` — seven animated sample events, label variants, native frames, gallery and a staged 28-second showcase. This is an event app: the showcase demonstrates examples and is not an idle rotation.
+- `NetatmoV2/` — ten module pages plus old-data/sign-in/empty-state examples. The 40-second showcase uses the synthetic five-module station with four seconds per page (the installed default is six). No real Netatmo account data or credentials are present.
 - `source-notices/` — the unmodified official AWTRIX NG BDF source, its retained license, and provenance notice.
 
 `dist/AWTRIX-Hub-media.zip` contains only the README, provenance/hash manifest, source notices, and user-facing media folders. It intentionally excludes Berry source snapshots, JSON captures, and helper scripts.
@@ -38,6 +39,8 @@ SolarApp scenes use the requested sample values: 2500 W production, 12345 Wh dai
 PelletStove scenes use the Berry harness's sample state: on/off enabled, heating mode, 21.4°C actual / 22.0°C target, 8.4 kg pellets, 32.5 h cleaning interval, 45% ash usage, and clear error unless the scene says otherwise. The `standby-status` still shows the ordinary `STANDBY` page with live current temperature 24.0C. The separate optional standby scene sets `standby_skip=true` (the setting defaults to `false`), requires power `Yes`, enters mode `STANDBY`, establishes the 21.4°C / 22.0°C baseline, then feeds a changed 21.5°C reading; the captured `SET22.0C` temperature-only visit is the source behavior. It does not claim that the physical script was skipped on a device.
 
 Event trigger samples publish active pulses for motion, mail received, mail collected, heat, water, doorbell and garage. Seven full-panel scenes and seven labelled variants each cover four seconds of elapsed animation. The combined showcase stages those seven full-panel examples. It does not imply the app cycles through all events without MQTT input. Artwork is generated procedurally by the app; no external scene icons are loaded.
+
+NetatmoV2 reads a synthetic `getstationsdata` fixture containing the main Indoor module, Outdoor module, Couch indoor module, rain gauge and anemometer. The capture helper explicitly supplies sample rain of 0.4 mm, a 1-hour total of 1.2 mm, mean wind of 12.4 km/h and direction 225 degrees to demonstrate active animations; the regression fixture retains zero readings for testing. Per-scene captures cover both pages for each type, and diagnostic captures cover stale/expired Outdoor readings, no discovered modules and sign-in. Illustrations are built into the generated script. Weather-station data, OAuth readiness, network replies and clocks are mocked; no live service is contacted.
 
 ## Provenance
 

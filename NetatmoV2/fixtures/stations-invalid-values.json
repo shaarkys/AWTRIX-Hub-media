@@ -1,0 +1,45 @@
+{
+  "body": {
+    "devices": [
+      {
+        "_id": "synthetic-invalid-01",
+        "type": "NAMain",
+        "station_name": "Invalid sample",
+        "dashboard_data": {
+          "time_utc": 1700000000,
+          "Temperature": 999,
+          "Humidity": -1,
+          "CO2": "800",
+          "Noise": null,
+          "Pressure": 0
+        },
+        "modules": [
+          {
+            "_id": "synthetic-rain-invalid",
+            "type": "NAModule3",
+            "module_name": "Invalid rain",
+            "dashboard_data": {
+              "time_utc": 1700000000,
+              "Rain": -0.1,
+              "sum_rain_1": "0",
+              "sum_rain_24": null
+            }
+          },
+          {
+            "_id": "synthetic-wind-zero",
+            "type": "NAModule2",
+            "module_name": "Calm",
+            "dashboard_data": {
+              "time_utc": 1700000000,
+              "WindStrength": 0,
+              "GustStrength": 0,
+              "WindAngle": 0,
+              "GustAngle": 360,
+              "max_wind_str": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
