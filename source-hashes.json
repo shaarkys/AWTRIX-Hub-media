@@ -82,7 +82,7 @@
     },
     {
       "path": "NetatmoV2/NetatmoV2.ax",
-      "sha256": "781bf0734704217d83a8dd9738e1efe1fbeabdd89f25e344eec71aae7dea67dd"
+      "sha256": "a83dd6efdf85c1ccadc0752e9de6c05b0482d35d32672d2fe87ce89e4ce45372"
     },
     {
       "path": "NetatmoV2/netatmo_core.be.inc",
@@ -90,7 +90,7 @@
     },
     {
       "path": "NetatmoV2/netatmo_graphics.be.inc",
-      "sha256": "624cd91a57e1b9a77584315c9324b4f52000a4f3b3db2c98d216e418c24a209e"
+      "sha256": "d528123590d147ca0e864595bcb9b35027f66e4f02b4a474476c230a051f844c"
     },
     {
       "path": "NetatmoV2/build_netatmov2.py",

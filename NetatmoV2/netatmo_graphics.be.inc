@@ -456,19 +456,34 @@ class NetatmoArtwork
   def room_scene(elapsed_ms, kind, view, active)
     var pulse = int(self.phase(elapsed_ms) / 500) % 2
     var base = self.show_caption ? 9 : 15
-    var top = self.show_caption ? 0 : 2
     if kind == "outdoor"
-      # Foliage and a weather module identify outdoors, without a forecast.
-      self.rf(2, base - 5, 1, 5, 0x65825C)
-      self.rf(0, base - 6, 5, 2, 0x458C6A)
-      self.rf(1, base - 8, 3, 2, 0x75B487)
-      self.px(1, base - 6, 0xB9D8A2)
-      self.rf(9, top + 1, 6, base - top - 1, 0x70878C)
-      self.rf(10, top, 4, 1, 0xD4DFD9)
-      self.rf(10, top + 1, 2, base - top - 2, 0xB6C9C5)
-      self.rf(12, top + 1, 2, base - top - 2, 0x8EA5A5)
-      self.rf(10, base - 2, 4, 1, pulse == 0 ? self.teal : 0x3F7777)
-      self.rf(8, base, 8, 1, 0x364947)
+      # A garden tree, timber fence and grass identify an outdoor location.
+      # Leaf highlights are ambient decoration, never a weather forecast.
+      var crown_top = self.show_caption ? 0 : 1
+      var crown_h = self.show_caption ? 5 : 8
+      var trunk_top = crown_top + crown_h - 1
+      self.rf(5, trunk_top, 2, base - trunk_top + 1, 0x9D7451)
+      self.rf(6, trunk_top, 1, base - trunk_top + 1, 0x72553D)
+      for row : 0 .. crown_h - 1
+        var half = row == 0 ? 2 : (row == crown_h - 1 ? 3 : ((row == 1 || row == crown_h - 2) ? 4 : 5))
+        self.rf(6 - half, crown_top + row, half * 2 + 1, 1, row < 2 ? 0x86B982 : (row < crown_h - 2 ? 0x529568 : 0x397653))
+        if row > 1 && row < crown_h - 1 self.px(6 + half, crown_top + row, 0x326349) end
+      end
+      self.rf(3, crown_top + 2, 3, 1, pulse == 0 ? 0xB0D59B : 0x9AC78D)
+      self.px(2, crown_top + 3, 0x81B47D)
+      var fence_h = self.show_caption ? 3 : 5
+      self.rf(10, base - fence_h + 2, 8, 1, 0x967E60)
+      self.rf(10, base - 1, 8, 1, 0x79694F)
+      for post : 0 .. 2
+        var x = 11 + post * 3
+        self.rf(x, base - fence_h, 1, fence_h, 0xD2B48A)
+        self.px(x, base - fence_h, 0xF0D2A5)
+      end
+      self.rf(1, base, 4, 1, 0x406B43)
+      self.rf(7, base, 4, 1, 0x608653)
+      self.rf(14, base, 4, 1, 0x406B43)
+      self.px(1, base - 1, 0x83A661)
+      self.px(9, base - 1, 0x83A661)
     else
       # A full house silhouette identifies all indoor modules. Room captions
       # can distinguish several indoor locations without changing the symbol.
