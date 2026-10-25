@@ -267,10 +267,11 @@ def render_pellet() -> None:
         "error-clear",
         "error-fault",
         "off",
+        "standby-status",
         "standby-temperature",
     ]
     output = ROOT / "PelletStove"
-    animated = set(names) - {"pellets-empty", "error-clear", "off"}
+    animated = set(names) - {"pellets-empty", "error-clear", "off", "standby-status"}
     stills = render_app("PelletStove", ROOT / "work" / "pellet-captures", output, names, animated)
     save_still(
         stills["heating"],

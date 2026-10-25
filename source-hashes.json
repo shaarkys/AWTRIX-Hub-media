@@ -18,11 +18,11 @@
     },
     {
       "path": "PelletStove/PelletStove.ax",
-      "sha256": "342988cc566fd853290a87b7c57c64a36dad099e519ae4eb5d79ed5b4a9844f6"
+      "sha256": "73531656247e9617ab8d7a49c0ca2aa4330ea7b98fa98a0d9ab498537c111bdd"
     },
     {
       "path": "PelletStove/tools/test_pelletstove.be",
-      "sha256": "3b7ec8f944c43154ba7ddaf7c11a58e57182799eb9810550358cd10eb6e23d68"
+      "sha256": "06e00ab50965357b1e9c696ea141c66beb28a3daddba677e5400da5a1264a54a"
     },
     {
       "path": "PelletStove/input-contract.json",
@@ -34,11 +34,11 @@
     },
     {
       "path": "tools/capture_pellet_media.be",
-      "sha256": "ec05363935eeae72bf3922d258a7ee57dcd0472d99743099a5f0e3bd3ee89f44"
+      "sha256": "01994af44d1827668610df9b16b60638096776300548071d6e783db7d5a012a4"
     },
     {
       "path": "tools/render_media.py",
-      "sha256": "4c9fbc43c06c814ae3e93766f8beab1c3d6755dd81f04b0e0c0ce79d7f3611af"
+      "sha256": "d33f4d8e7ca1599c5190e3b83386672cb344e27d5cf7d47f2d0fa4dd1d3b76ee"
     },
     {
       "path": "source-notices/awtrix-small.bdf",

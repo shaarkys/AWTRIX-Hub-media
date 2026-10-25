@@ -260,10 +260,10 @@ clock_ms = 1000
 feed(app, 0, " StandBy ")
 var frozen = json.dump(app.values)
 var ages = json.dump(app.updated)
-for index : [1,2,3,4,6,7] feed(app, index, "0") end
+for index : [1,2,3,4,7] feed(app, index, "0") end
 check(json.dump(app.values) == frozen && json.dump(app.updated) == ages, "standby scalar readings and timestamps are frozen")
 app.choose(0, 5000) app.draw()
-check(has_label("STANDBY") && has_label("PAUSED"), "standby explicitly indicates frozen readings")
+check(has_label("STANDBY") && has_label("21.4C") && !has_label("PAUSED"), "standby shows mode and usable current temperature")
 for call : drawing
   check(!(call[0] == "line" && call[-1] == 0xE64D0A), "no heating flame in standby")
 end
@@ -276,6 +276,35 @@ feed(app, 2, "8") feed(app, 5, "true")
 check(app.values[2] == nil && app.values[5] == nil, "unknown mode cannot open gate")
 feed(app, 8, "Yes") feed(app, 0, "off") feed(app, 2, "8")
 check(app.values[2] == 8, "only standby blocks known fresh modes, as requested")
+
+# The ordinary standby page keeps current temperature live without opening other pages.
+app = full_app({})
+feed(app, 0, "standby") feed(app, 6, "24.02")
+feed(app, 7, "30") feed(app, 2, "1")
+app.loop() app.draw()
+check(app.view == 0 && has_label("STANDBY") && has_label("24.0C"), "current temperature updates in ordinary standby")
+check(app.values[7] == 22 && app.values[2] == 8.4 && !app.eligible(5), "standby current reading does not enable target updates or metric rotation")
+check(app.pending[5] == 0 && !app.standby_changed() && app.should_show(), "ordinary standby temperature has no one-shot skip event")
+feed(app, 6, "bad") app.draw()
+check(has_label("24.0C"), "invalid current temperature preserves the last usable reading")
+feed(app, 8, "No") feed(app, 6, "25") app.draw()
+check(app.values[6] == 24.02 && has_label("OFF") && !has_label("24.0C"), "power No still blocks and hides standby temperature")
+app = new_app({"topic_state":"test/state"})
+feed(app, 9, '{"stove_mode":"standby","onoff":true}')
+app.on_show() app.draw()
+check(has_label("STANDBY") && has_label("--") && app.values[6] == nil, "missing standby temperature stays unknown")
+feed(app, 9, '{"measure_temperature":23.57,"stove_mode":"standby","onoff":true,"target_temperature":25}')
+app.loop() app.draw()
+check(has_label("23.6C") && app.values[7] == nil, "combined JSON accepts current but gates target in ordinary standby")
+app = full_app({"data_timeout":2})
+feed(app, 0, "standby")
+clock_ms = 1500 feed(app, 8, "Yes") feed(app, 0, "standby")
+clock_ms = 2100 app.loop() app.draw()
+check(has_label("STANDBY") && has_label("STALE") && !has_label("21.4C"), "expired current reading is not shown as live")
+feed(app, 6, "24") app.loop() app.draw()
+check(has_label("24.0C"), "fresh current reading recovers the standby page")
+clock_ms = 3600 feed(app, 6, "25") app.draw()
+check(!app.fresh(8) && app.values[6] == 24 && has_label("POWER?"), "stale power cannot admit new standby temperatures")
 
 # Exact screenshot-style values: cooling + cross means powered ON, not heating.
 app = new_app({})

@@ -63,7 +63,8 @@ var scenes = [
   ["cooling", 0, [[0, "cooling"]]],
   ["error-clear", 4, [[5, "false"]]],
   ["error-fault", 4, [[5, "true"]]],
-  ["off", 0, [[8, "No"]]]
+  ["off", 0, [[8, "No"]]],
+  ["standby-status", 0, [[0, "standby"], [6, "24.02"]]]
 ]
 
 for scene : scenes

@@ -140,8 +140,12 @@ class PelletStove
     return self.fresh(8) && self.values[8] == true && self.fresh(0) && !self.paused()
   end
 
+  def standby_ready()
+    return self.fresh(8) && self.values[8] == true && self.fresh(0) && self.paused()
+  end
+
   def standby_monitor()
-    return self.standby_skip && self.fresh(8) && self.values[8] == true && self.fresh(0) && self.paused()
+    return self.standby_skip && self.standby_ready()
   end
 
   def standby_changed()
@@ -158,10 +162,11 @@ class PelletStove
   end
 
   def close_gate()
-    # Keep last values for diagnostics, but require new readings after a pause/power-off.
+    # Keep diagnostics; gated measurements need a new reading after resuming.
     var monitor = self.standby_monitor()
     for index : 1 .. 7
-      if index < 6 || !monitor self.expired[index] = true end
+      var keep = (index == 6 && self.standby_ready()) || (index == 7 && monitor)
+      if !keep self.expired[index] = true end
     end
     for page : 0 .. 5 self.pending[page] = 0 end
     if !monitor
@@ -227,7 +232,7 @@ class PelletStove
   end
 
   def accept(index, raw)
-    var standby_temp = (index == 6 || index == 7) && self.standby_monitor()
+    var standby_temp = (index == 6 && self.standby_ready()) || (index == 7 && self.standby_monitor())
     var value = self.normalize(index, raw)
     # A valid clear retires an old fault even before power/mode messages arrive.
     var fault_clear = index == 5 && value == false
@@ -250,7 +255,7 @@ class PelletStove
     if (index == 0 || index == 8) && (!was_active || !self.active()) self.close_gate() end
     if standby_temp
       # The first reading establishes a baseline; repeated snapshots are not changes.
-      if previous != nil && previous != value self.standby_pending[index - 6] = true end
+      if self.standby_skip && previous != nil && previous != value self.standby_pending[index - 6] = true end
       return
     end
     var priority = 0
@@ -647,7 +652,7 @@ class PelletStove
           lower = self.updated[0] == nil ? "NO DATA" : "STALE"
         else
           upper = "STANDBY"
-          lower = "PAUSED"
+          lower = self.fresh(6) ? self.labels[6] : (self.updated[6] == nil ? "--" : "STALE")
         end
       end
       text(17, 6, upper, 0x9AA3AD)

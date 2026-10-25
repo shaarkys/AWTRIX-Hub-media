@@ -9,7 +9,7 @@ Standalone MQTT display apps for the **Ulanzi TC002 / AWTRIX NG, 52 x 16 pixels*
 
 **SolarApp** rotates through solar production/yield, battery charge, measured house load, and signed grid import/export. Solar is skipped when production is zero or stale. The house source graphic is illustrative; it does not calculate an energy split.
 
-**PelletStove** rotates through stove mode/status, current/target temperatures, pellets, cleaning, ash usage, and errors. It includes cooling-fan and microfiber-cloth animations, proportional 30 kg fuel levels, urgent cleaning/ash blinking, and the optional temperature-only standby turn. Valid false error readings clear old faults even in standby, OFF, or before fresh power/mode messages arrive.
+**PelletStove** rotates through stove mode/status, current/target temperatures, pellets, cleaning, ash usage, and errors. It includes cooling-fan and microfiber-cloth animations, proportional 30 kg fuel levels, urgent cleaning/ash blinking, a standby page showing current room temperature, and the optional temperature-only standby turn. Valid false error readings clear old faults even in standby, OFF, or before fresh power/mode messages arrive.
 
 Paste only the chosen `.ax` file into the AWTRIX Scripts editor. MQTT publishing is configured in Homey or another publisher. These scripts subscribe to data; they do not control the stove or inverter.
 

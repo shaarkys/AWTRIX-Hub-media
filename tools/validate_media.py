@@ -176,7 +176,7 @@ def check_zip() -> int:
 
 def main() -> None:
     solar_checked = check_images("SolarApp", 11, 11, 20000)
-    pellet_checked = check_images("PelletStove", 15, 12, 30000)
+    pellet_checked = check_images("PelletStove", 16, 12, 30000)
     check_manifest_sources()
     package_files = check_zip()
     print(f"PASS: {solar_checked + pellet_checked} Solar/Pellet image assets; source hashes; ZIP entries={package_files}")
