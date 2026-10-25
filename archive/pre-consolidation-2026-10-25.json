@@ -1,0 +1,976 @@
+{
+  "date": "2026-10-25",
+  "files": [
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/ash-100.gif",
+      "bytes": 30965,
+      "sha256": "1fe06de526007acf9db42377548507edcdb8688a91440eb1f51a20d542fc73b4"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/ash-20.gif",
+      "bytes": 7105,
+      "sha256": "6106bde73eb0aa43319250d524d14ebfee41d5e12d566ee826d0373ed9631a79"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/ash-50.gif",
+      "bytes": 7461,
+      "sha256": "f05451fc2ecc426343d32e9a0a3079aa5e70eb0c9788553d98bce12086198035"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/cleaning-1h3.gif",
+      "bytes": 15931,
+      "sha256": "29da4866c16e40d5750cd70698bab40c0ad0ac6776e356179be408d5aaf3d483"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/cleaning-due.gif",
+      "bytes": 26553,
+      "sha256": "db737dfd44e9f57b8c6c45c5f67b508e84b38c5c43581c2c0b7b262da223e6e5"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/cooling.gif",
+      "bytes": 11418,
+      "sha256": "4a69ec6f6841ae66e220909ad4a055804e763661524d5384d39fe659564dc724"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/error-fault.gif",
+      "bytes": 34530,
+      "sha256": "149805666458723f845690f21aa012b5132db14e106e49fd23129fa6966fda0d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/heating.gif",
+      "bytes": 16281,
+      "sha256": "4d2894e9fc48cf8a848b2e3ada8c5fac263aa8c143b0896f02b31f463e688d4c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/pellets-full.gif",
+      "bytes": 7492,
+      "sha256": "bd80e72a2e16b0e7f5bc9deea9fb5c274edf296d2ffb495b76c53b0b51bd415b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/pellets-half.gif",
+      "bytes": 7165,
+      "sha256": "eecddcd94652560bd8dcc2c34c13b1c534580e2f984780f8c3e8c3a03eb12be7"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/standby-temperature.gif",
+      "bytes": 5539,
+      "sha256": "756b7cb0207c4693aea8f3768c672da2b5330163f28a94ff76657a25754eb1d4"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/animations/temperatures.gif",
+      "bytes": 6256,
+      "sha256": "648e0cde3f0644db69c3d02d6323bbba2dc71edbd436cb343c9769a13ecadabc"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/gallery-contact-sheet.png",
+      "bytes": 30223,
+      "sha256": "d1154e6a5f92a70313b233a618926ecdbd165404c100196ba58783b696680c43"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/ash-100.png",
+      "bytes": 525,
+      "sha256": "bc15b4df1be42bd9861c657200f5896c1d93fc54554797f166dae4d81a1a7ff7"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/ash-20.png",
+      "bytes": 422,
+      "sha256": "9fde223fba09b6afb45081e24c24783dd41b9c8b5a2f6ede27783c2dcfad6b36"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/ash-50.png",
+      "bytes": 457,
+      "sha256": "7ab1e95e54f9b121db555c215ecdab32a2fe84955bf185027b8d1b8a1d6c750b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/cleaning-1h3.png",
+      "bytes": 404,
+      "sha256": "30ea0ace91312a9bd518d8735274a207e7e92cf9382d8eabe92647b9c99562d5"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/cleaning-due.png",
+      "bytes": 400,
+      "sha256": "13bb4c39ed88da7cbb20aa2038f4cbd6ab09fdce62ab8076675364765296a771"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/cooling.png",
+      "bytes": 372,
+      "sha256": "ef7dc1f3cad1a0c40c081466fcb0ad6e5c3bd8c6264094aff812a37023f3f713"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/error-clear.png",
+      "bytes": 309,
+      "sha256": "c8f662a928fd6a3e25b51802da33d2498328dd5db160bc9fdd38a59db8e65891"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/error-fault.png",
+      "bytes": 307,
+      "sha256": "8638a12a0c011dfc30b0f916a53eee58a8af2e42ea67d6b793310acdfd7f6547"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/heating.png",
+      "bytes": 446,
+      "sha256": "351c7f6c1aa27df56b6682c2c89b6a61296f3b39efc61842bae44164a6d511d3"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/off.png",
+      "bytes": 330,
+      "sha256": "e9aed98817bed0ec15e4cd523c5b3111d19585d873c0720545bcfa786068f6b3"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/pellets-empty.png",
+      "bytes": 319,
+      "sha256": "e2b77bdb6d3fcdc1b277cc252e19d4845b2e460ad88b3759b8db3fc72be50019"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/pellets-full.png",
+      "bytes": 438,
+      "sha256": "045c8d41a41cab52a99f03517eee01ceb4fda33219b0ef36aa3b03efab7f71a1"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/pellets-half.png",
+      "bytes": 439,
+      "sha256": "0bd9a55b8a83df0db9431cb1ef50e7ae07530e9dd809e18ec388abb95d350be8"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/pelletstove-cover.png",
+      "bytes": 446,
+      "sha256": "351c7f6c1aa27df56b6682c2c89b6a61296f3b39efc61842bae44164a6d511d3"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/standby-temperature.png",
+      "bytes": 339,
+      "sha256": "3fbcf01a516832a3004a5c642272136b17eebd86d045f212a2ff9587fb63c9df"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/native/temperatures.png",
+      "bytes": 365,
+      "sha256": "cd0188c48e6dbf3c0544766408606a22bfa88827c6a74ac231cb71c2ac2d1ec5"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/pelletstove-cover.png",
+      "bytes": 2370,
+      "sha256": "07ae27f61978eba63c75fce0f04b3a3da5c449b0dbd4c402bed210403f4eb6b0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/pelletstove-showcase.gif",
+      "bytes": 78752,
+      "sha256": "f10a39cb6a1f010d56245ef4e1938cd989221f18a923e60732be33d31a95826b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/ash-100.png",
+      "bytes": 2581,
+      "sha256": "0684b5808f9e2c989353e0a30988c335626bf269d90855597d6b5cdae6de2d6d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/ash-20.png",
+      "bytes": 2290,
+      "sha256": "566ef9a0f04d3e98ae6c8f1402c81fc3faecbf68e1d19e1cda70275a81cb87af"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/ash-50.png",
+      "bytes": 2396,
+      "sha256": "202454f8ff15d68e6d816e0eb3684feadef2db142580013cfe92994e883ed268"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/cleaning-1h3.png",
+      "bytes": 2304,
+      "sha256": "fdab05a7dd432c85d2e6323f802c10a95bae7166e04425ecffcb0bf0d7f0bca6"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/cleaning-due.png",
+      "bytes": 2296,
+      "sha256": "0f1cc28e2df95288fe104cbb81428d492f39ecbcac4e7bc45840e1872cfd9e3d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/cooling.png",
+      "bytes": 2268,
+      "sha256": "a3d7153bf49795e45b27a69f316de0bb481195fc618cf7c867260877735f2785"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/error-clear.png",
+      "bytes": 2147,
+      "sha256": "fd6b07bff40b952b52e0541427cc253f67d09d188b5d25260dfa7c5b8fff47fc"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/error-fault.png",
+      "bytes": 2182,
+      "sha256": "3f289ca1c6f3c183812faf6798188b1fc4ff1ae9b551136ad5764171cd63968c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/heating.png",
+      "bytes": 2370,
+      "sha256": "07ae27f61978eba63c75fce0f04b3a3da5c449b0dbd4c402bed210403f4eb6b0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/off.png",
+      "bytes": 2086,
+      "sha256": "c256b2d8f7b3d263e93a4768affe3f1ac9298c658ea55d9723b139593e8b0c14"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/pellets-empty.png",
+      "bytes": 2173,
+      "sha256": "bc7167ded28919d3a13217a549d5735e44e8bbbf27554a5f1c0119316127090d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/pellets-full.png",
+      "bytes": 2413,
+      "sha256": "8a2b325cbbf911e4c29a9d57a1f8912d8d3abd2677b7cb5b011f7674901357ba"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/pellets-half.png",
+      "bytes": 2333,
+      "sha256": "60a8a0e9c36a7ff76acbf5827fe09b79449fa572a03922333416a1f88278511d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/standby-temperature.png",
+      "bytes": 2144,
+      "sha256": "c53536bb0a770add8a7e6eedbcca28181a92b902eed9d067972d721a0e4903d2"
+    },
+    {
+      "path": "AWTRIX-Hub-media/PelletStove/screenshots/temperatures.png",
+      "bytes": 2224,
+      "sha256": "431dcf29da575ad535e843be53c800695c40413e743ea3b8f13728b8db1353b0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/README.md",
+      "bytes": 6127,
+      "sha256": "58530f752b9cbae394144fcf9071c9722ec238daee8eca7e4726635cc5774794"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/battery-charging.gif",
+      "bytes": 201720,
+      "sha256": "9f20dd56f89e756e9ee61227650e069ee9e4b31e1888eb7fd451d9a04b5d00b0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/battery-discharging.gif",
+      "bytes": 199636,
+      "sha256": "c0b579687cf45f7bb6646ed4d37d259ee15eb7411ac43a87b4cd1a224a9accd2"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/grid-export.gif",
+      "bytes": 169857,
+      "sha256": "74ab026670c56d38fa7676de5fc75f5329a107c821cf779c1149eb18bd1d903d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/grid-idle.gif",
+      "bytes": 104401,
+      "sha256": "208fabab0c8a7f61f894c204afe80c74760ed9b24e1ce6bc7e128c474dd0ce1d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/grid-import.gif",
+      "bytes": 169926,
+      "sha256": "bd7d9c88eeecd97fc40267ed222088491d5195ac2c134f7a51fc2d9cb434d324"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/house-battery.gif",
+      "bytes": 197149,
+      "sha256": "bc96fb69daef764bdedd4abfab0d285e666fa7b968d994f46ad26a1eac631020"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/house-grid.gif",
+      "bytes": 160573,
+      "sha256": "75428c12508be4e6a854db16e1139eb1973fbbecf8e835af31f8c63dddf79168"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/house-solar.gif",
+      "bytes": 287163,
+      "sha256": "447ea36b757ee914ccebcb28d7b1026827b74ca5427e66b2a30f2881b2e23ee1"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/house-unknown.gif",
+      "bytes": 246643,
+      "sha256": "f85e53ea3e0f5990734f6c8ee24b7f8ef53c287bc855d1c498b35af45d571dc5"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/solar-production-half.gif",
+      "bytes": 337140,
+      "sha256": "d605e30e39cb9ab53eb2c658b546abe938bc5a37b10dd69c43e2c06a40604097"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/animations/solar-production-large.gif",
+      "bytes": 317320,
+      "sha256": "be7e49d13bd95870759090760685f26c9128242f3e88f9005f5ba42c6d2bdd4a"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/gallery-contact-sheet.png",
+      "bytes": 27359,
+      "sha256": "f770f4b445710527975b8a254f609cd7f1bed59e75e3458d5ceea27d643f3d20"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/battery-charging.png",
+      "bytes": 654,
+      "sha256": "74bd03784d1d60ee495a9f550278674530a21b510ad648d9e99f48597b26371b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/battery-discharging.png",
+      "bytes": 627,
+      "sha256": "be623a81b3df9ad51e1f131635e7e22b54499868734b9b822f1b253445ff9a6f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/grid-export.png",
+      "bytes": 543,
+      "sha256": "7866e376f2606ce259a50dea6f796bbe798ff6b529ea7af5cb5287fdd51963e8"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/grid-idle.png",
+      "bytes": 474,
+      "sha256": "77ad5d3e867b25cc21af10f33db39bc1d9566b5ab354b8bdd0e0ef2fa01ec6f0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/grid-import.png",
+      "bytes": 536,
+      "sha256": "8a2cacfa23da3a427585a4b17df1c25f8a28d2264e786d771dfd9e98cc9b0fcb"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/house-battery.png",
+      "bytes": 647,
+      "sha256": "cef6c26adedd4d91f62caf895a2274b60f658b93d4386a6c1e4f187536c1737c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/house-grid.png",
+      "bytes": 522,
+      "sha256": "6ee35f1ce506d471a1589f4421fdd3cb8f7cc716c9979bdeb6b267409036d9b7"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/house-solar.png",
+      "bytes": 690,
+      "sha256": "e563536156cf77ee7d4fa89061a65368cd00bd8f6272d14e29d88c3604ca3642"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/house-unknown.png",
+      "bytes": 634,
+      "sha256": "b047fca9301d302fbb0b7c61775de71f16d2f598d92cd2dbda332fb77304d733"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/solar-production-half.png",
+      "bytes": 717,
+      "sha256": "254c5d85b36eea9f25e98d042c3e32f255bc2fde298f96c2ba28a43419541c88"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/solar-production-large.png",
+      "bytes": 738,
+      "sha256": "30b6156ad0dcb0107cfd0008f543dbca187715e1605b5d5cd88998688adc71b2"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/native/solarapp-cover.png",
+      "bytes": 738,
+      "sha256": "30b6156ad0dcb0107cfd0008f543dbca187715e1605b5d5cd88998688adc71b2"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/battery-charging.png",
+      "bytes": 2751,
+      "sha256": "bf4deaa7e9b6f99c8420249b626056b1d07ab62def69af1da043ffadcb165102"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/battery-discharging.png",
+      "bytes": 2743,
+      "sha256": "780f3bbde1d9a33dd279b800bf310fdc512b3bddce26ec537d9b49a3ad2aec05"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/grid-export.png",
+      "bytes": 2560,
+      "sha256": "10c999123f73374861dbe129af046c180fcc1155a5cdfd3b35a6c173d7ebeeb6"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/grid-idle.png",
+      "bytes": 2426,
+      "sha256": "df59b773432e1a3ef79678baa26af1844e55640cd7dca4943f1dcb52cceef742"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/grid-import.png",
+      "bytes": 2521,
+      "sha256": "bba19e4e9916ac1580298e6e219b19b550c5a54a11f4a817b27a8161eb0cc2b6"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/house-battery.png",
+      "bytes": 2687,
+      "sha256": "680ad5f5042024d3576bdfd4bb834b15019b3751eeb077489f5828144340e27e"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/house-grid.png",
+      "bytes": 2549,
+      "sha256": "5144f3d9047d2f419f3f758ab69afcab678bc462d63428a7dcc6013d2ee5caea"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/house-solar.png",
+      "bytes": 2770,
+      "sha256": "1727ce7fbd53be277dd776de43bd16c191074e8e2b7a551ebae83ca6d59242b4"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/house-unknown.png",
+      "bytes": 2635,
+      "sha256": "a32e732eddf1b35f2766c643bd70b540e29cf429e3d6c2e7965a1fc6a3a72ee8"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/solar-production-half.png",
+      "bytes": 2852,
+      "sha256": "2df87e52750bce8dee04a1129f4859da9c1199be0d190305723a49c661d06699"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/screenshots/solar-production-large.png",
+      "bytes": 2804,
+      "sha256": "a3285aac7e34ee21fe8271ff7011181a69097de1af1f9782f0a9276e7623cdb7"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/solarapp-cover.png",
+      "bytes": 2804,
+      "sha256": "a3285aac7e34ee21fe8271ff7011181a69097de1af1f9782f0a9276e7623cdb7"
+    },
+    {
+      "path": "AWTRIX-Hub-media/SolarApp/solarapp-showcase.gif",
+      "bytes": 1196370,
+      "sha256": "7b2c4c317e0daf6d0670384d231d974c7da49773c2327bd39df86c7362f668bb"
+    },
+    {
+      "path": "AWTRIX-Hub-media/source-hashes.json",
+      "bytes": 1983,
+      "sha256": "b5fcd273d31908c95ffabfc873632c3e76b7fdad78c02ae6c8e060dbfcc1d7bc"
+    },
+    {
+      "path": "AWTRIX-Hub-media/source-notices/awtrix-small.bdf",
+      "bytes": 21398,
+      "sha256": "7e2e83ab23789330df47b03899b171af6a6d8692d4d0f9e5bf17e634d9027c36"
+    },
+    {
+      "path": "AWTRIX-Hub-media/source-notices/FONT-LICENSE.txt",
+      "bytes": 21674,
+      "sha256": "7db5ddbfb3c4b6bc390f9406d4129a38094af37faaf16ed53666c379e51e596b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/source-notices/FONT-NOTICE.md",
+      "bytes": 1005,
+      "sha256": "2d5a100a7acce81a5740a9cccee35263dc3aeb85e9da89dddf722d9f70ecf57f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/__pycache__/package_media.cpython-313.pyc",
+      "bytes": 2362,
+      "sha256": "c9d59e2e0f3cf7e7acac1493b894c2c61095e5af3f2e916f73a2d83240dc5b48"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/__pycache__/render_media.cpython-313.pyc",
+      "bytes": 15143,
+      "sha256": "586c0baeb27b8fc150274baf23c1243acf196332620e027ed69beec828db3d6e"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/__pycache__/validate_media.cpython-313.pyc",
+      "bytes": 13127,
+      "sha256": "aa7bf1c24a930aa82e268f7e4349631f1ade1f6eecbf83032cc385305328ce3f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/package_media.py",
+      "bytes": 1082,
+      "sha256": "d41af4d98db6c551e8fee709f7109b6618c81c2f38f04e480fcc806c0c3eeea4"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/render_media.py",
+      "bytes": 10792,
+      "sha256": "4c9fbc43c06c814ae3e93766f8beab1c3d6755dd81f04b0e0c0ce79d7f3611af"
+    },
+    {
+      "path": "AWTRIX-Hub-media/tools/validate_media.py",
+      "bytes": 7703,
+      "sha256": "2fba20d5e00e26067d7fc67473586f89cdd965b5696fce955488e047a4ad4987"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/AWTRIX-Hub-media.pre-gif-fix.zip",
+      "bytes": 3659536,
+      "sha256": "3d1eb2337c1a66c1ddfdeff521c28e2342aeb04cf3da4b19975b8d579cabe41d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/AWTRIX-Hub-media.previous.zip",
+      "bytes": 3659901,
+      "sha256": "c38479d8ae3fc0a0df1cd4ac48cc74d9852705e8f37c9ef96545ce01229029e2"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/capture_pellet_media.be",
+      "bytes": 2459,
+      "sha256": "b32957ea3ec79f2c75d8d0a55c551181122ca4eb267bec442d109c2b0d6f8268"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/capture_solar_media.be",
+      "bytes": 2368,
+      "sha256": "349d4353e6fe782aba76559b87792a906807e83ababf97c01d45b4602b1a191e"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/battery-charging.json",
+      "bytes": 164733,
+      "sha256": "d0cb547c3aa5c17b66ab214d69723cc223b3d92e260e450cad27bdff7d0f5e41"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/battery-discharging.json",
+      "bytes": 164733,
+      "sha256": "3eeeb584935258b2236421119da8bbd2bb85075c84d03a50f7f55f09286489c8"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/grid-export.json",
+      "bytes": 155877,
+      "sha256": "ec7b1bb1119e0e299b8075aa62aaa77cfbd4396ecf0ba9decfde3bd72583503f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/grid-idle.json",
+      "bytes": 145453,
+      "sha256": "ccd245ce4ad2bd8c23e1a1530395fb06390ccbd201d2d6e0bb6f0e10104855e3"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/grid-import.json",
+      "bytes": 161245,
+      "sha256": "b629b045e19336d2a5ea280dee55ffb63ad3fbdd84a57a606658d19814533e59"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/house-battery.json",
+      "bytes": 164776,
+      "sha256": "67f3bb333e8bfd1e0d0f9abff45f8d25381a479b48b22744f9fae524c89f513c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/house-grid.json",
+      "bytes": 160959,
+      "sha256": "6e7ff05a411d5e3379e79facaeb2caa51187f3df2974f5ad02030563789f8f8b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/house-solar.json",
+      "bytes": 208912,
+      "sha256": "d69bfeb2d7818aa2f5c17ff92ec1ebfcb329f62d553671255c1dddbc60db9d18"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/house-unknown.json",
+      "bytes": 273804,
+      "sha256": "3deab4eb1002c119fb23b039a5438efe36963b65748a28a18b7919f3ca7be14b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/solar-production-half.json",
+      "bytes": 202080,
+      "sha256": "706788fb88438b66d36174aa12b39535a61798dce90b33a9dedd4c7b22d0d908"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/solar-production-large.json",
+      "bytes": 181757,
+      "sha256": "61592d382959dc8dc842dc8073e4599b9ee173d1a5ea7cd3a123e29af8f6414c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/captures/solarapp-showcase.json",
+      "bytes": 889117,
+      "sha256": "28ae54c33b2b4441f5ea53589e3038f97d857e296f4b65af4309f9779c4ba442"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/graphics.be.inc",
+      "bytes": 7407,
+      "sha256": "119530fb195f6f2940a4a0ebd559d5332d67ab5e35f7d178d99539806a614b91"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet/PelletStove.ax",
+      "bytes": 27832,
+      "sha256": "76af4bf3f146dc44bff95b57384b970e1561cb7a6a5c372c2d6e819e86f7ed86"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet/prefix.be",
+      "bytes": 3096,
+      "sha256": "fbb7e4b2691c1f1d8d8abe6dea9d74f97fe9fedc1f4c4a33057758b2793726e1"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet/run_pellet_capture.be",
+      "bytes": 207,
+      "sha256": "dfcd139f3b25d8a2f8b7c1e5a29f0fc01f4664f1dacd3cf911285f8831f8858c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet/test_pelletstove.be",
+      "bytes": 31067,
+      "sha256": "db20cc235b96f21cbc97de787fd9299536e611160dce22766dba2e2c1727995e"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/ash-100.json",
+      "bytes": 32547,
+      "sha256": "17203cee241eccdb05861ce53f8c974b9716b0a67d5aaa7f48318f9aa6ed8f17"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/ash-20.json",
+      "bytes": 24449,
+      "sha256": "118913b869718a822203c346f9f920a1641330297e81daf04f77cba21d205191"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/ash-50.json",
+      "bytes": 37049,
+      "sha256": "eea2b57c96184877a8ff388e31219292c73d8fd204ef7d48d2e5efe265faf846"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/cleaning-1h3.json",
+      "bytes": 23692,
+      "sha256": "bfefc0aa60063c8cfffa2a03a756969501b898ef61800d63cd876de998ed640c"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/cleaning-due.json",
+      "bytes": 15464,
+      "sha256": "6b25224258ecdcc7ce79cb40c367c9fb9925faeda758f8a3ba2e117579da2c15"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/cooling.json",
+      "bytes": 24301,
+      "sha256": "9569ced95e615e1b187b700a4c9612f5934d90234a3c10ca949bb5c694031316"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/error-clear.json",
+      "bytes": 13801,
+      "sha256": "f1e01b563d1e0ea46b5f2575b71610341974e1d3a6e26a58eb79df67e6a7f48a"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/error-fault.json",
+      "bytes": 25620,
+      "sha256": "73b7f7f8db075627ed32fdf89e7b0afa3a94acd6d507792b45aa57288e9acc85"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/heating.json",
+      "bytes": 31421,
+      "sha256": "af29c099774671f2f2da8ac03f3b78ffec1b6fe3272692c192cc63698b97220b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/off.json",
+      "bytes": 12921,
+      "sha256": "eff11fc9959228e0c648645cc7ba563222adc1891328c6d9a9c82de0e1e154ec"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/pellets-empty.json",
+      "bytes": 16121,
+      "sha256": "4ff9e969cf34fe385be2e54884cd807f956b669a11efe5ce44aaac34d0dbf55f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/pellets-full.json",
+      "bytes": 34201,
+      "sha256": "e82bed033260b2bad724fae23037b2faffefdc2f7b552582e624d38e674b9e00"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/pellets-half.json",
+      "bytes": 26761,
+      "sha256": "fd53769f03549bb7574ad1bf631059f038259af44f4a2e27739cd1cc40f5d25d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/pelletstove-showcase.json",
+      "bytes": 180253,
+      "sha256": "58fc1e8b5343908ddf20ee194e41fdd47d88520d16f0bee387031f1cc208b5c6"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/standby-temperature.json",
+      "bytes": 13081,
+      "sha256": "57b92cb8a63cbe44881c7baa8c552c086165de2036b466f0baf6ad431ee6708d"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/pellet-captures/temperatures.json",
+      "bytes": 18881,
+      "sha256": "40ffc533a25808afb4046b1da74cd750d201b0020e674555b4067c4f4e067584"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/PelletStove-disposal1-frames.png",
+      "bytes": 9358,
+      "sha256": "148704b984d26ae1e91292da6180ec3a0af99276ba2f3445a2fcd4bcda16dc16"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-battery.json",
+      "bytes": 4106,
+      "sha256": "510de7d573a8e8756ee9d692871a1e142c7062f4ceb72549901ef78b73e36c5f"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-export.json",
+      "bytes": 3903,
+      "sha256": "75dd917d3fe9b23bd4c5217c3384bf0a0259a7cfe07c8c71c7617268775ea0e4"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-house-unknown.json",
+      "bytes": 6840,
+      "sha256": "69b68a13930687b7764bffe09b4d91d36f56a46a0d525ebecfcbe64bc95cb3dc"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-house.json",
+      "bytes": 5234,
+      "sha256": "8fe76e904b7408e1918f9b2350f303491b862b1f4390b1bc9ded6cad1be311b3"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-import.json",
+      "bytes": 3999,
+      "sha256": "457e326896ada7f5f038cdd6c1c2f3d53b66b1fe9af894cb906486daaacc59d0"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-solar-half.json",
+      "bytes": 5068,
+      "sha256": "f83bba64a9cef34cf7640d46c5d5d277aefdf002e8c06ce7a967f5ff3355ad8b"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/preview-solar.json",
+      "bytes": 4535,
+      "sha256": "cc2dbdbe0277e9dfb07b00afb59a3c94e715c372d92c086b45a85a2f996470b6"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/run_solar_capture.be",
+      "bytes": 210,
+      "sha256": "32d4a4b2708b5fdec864b26a24327aa82fdc53dc83492f4d2f44875d3f995017"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/SolarApp-disposal1-frames.png",
+      "bytes": 7884,
+      "sha256": "3d0e55606ba516f97b9d4e69ea5b2115669d1f3e3d3e96e8fccd2f0f056ad2fd"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/SolarApp.ax",
+      "bytes": 31073,
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "path": "AWTRIX-Hub-media/work/test_solarapp.be",
+      "bytes": 11364,
+      "sha256": "46f96ce26ceba2186cc67f847feebbe6f3fd6daee216adda083a7099773ab4b5"
+    },
+    {
+      "path": "SolarApp-extension/animation-frames.json",
+      "bytes": 573615,
+      "sha256": "322193e372b18bea6af4e607b19771d60098a1af5f4b58247710f5a82839c31a"
+    },
+    {
+      "path": "SolarApp-extension/berry-Makefile.txt",
+      "bytes": 2306,
+      "sha256": "0ee6cc7dc0a9eb2e94718cff6206932a484f059a1efac72497b6e6b23301ae94"
+    },
+    {
+      "path": "SolarApp-extension/build_extension.py",
+      "bytes": 18628,
+      "sha256": "4a6562209bc9f1b5c2b581d89dc34c213f1077ae433a7f3320c169fbd711b4bd"
+    },
+    {
+      "path": "SolarApp-extension/capture_animation.be",
+      "bytes": 292,
+      "sha256": "1d3f3f92eaaa83c0ae1763b7677fee033c7ca1b442815288ce1b0822db45bc84"
+    },
+    {
+      "path": "SolarApp-extension/capture_frames.be.inc",
+      "bytes": 603,
+      "sha256": "2f234851ea53b61b2475c6f83ae8dd72e9f6df9e511656581a17db99290f0b75"
+    },
+    {
+      "path": "SolarApp-extension/energy-scenes-preview.gif",
+      "bytes": 267513,
+      "sha256": "6c51d0e25a09bf51606746f9bbceb445c468b8ed47a6446f2b78caa546f4f6b5"
+    },
+    {
+      "path": "SolarApp-extension/graphics.be.inc",
+      "bytes": 7407,
+      "sha256": "119530fb195f6f2940a4a0ebd559d5332d67ab5e35f7d178d99539806a614b91"
+    },
+    {
+      "path": "SolarApp-extension/house-load-preview.gif",
+      "bytes": 59543,
+      "sha256": "d5f40855ffb3ceaf76ff7702b986dca9b517aac8cee517d63bbed912dc507e2d"
+    },
+    {
+      "path": "SolarApp-extension/preview-battery.json",
+      "bytes": 4106,
+      "sha256": "510de7d573a8e8756ee9d692871a1e142c7062f4ceb72549901ef78b73e36c5f"
+    },
+    {
+      "path": "SolarApp-extension/preview-export.json",
+      "bytes": 3903,
+      "sha256": "75dd917d3fe9b23bd4c5217c3384bf0a0259a7cfe07c8c71c7617268775ea0e4"
+    },
+    {
+      "path": "SolarApp-extension/preview-house-unknown.json",
+      "bytes": 6840,
+      "sha256": "69b68a13930687b7764bffe09b4d91d36f56a46a0d525ebecfcbe64bc95cb3dc"
+    },
+    {
+      "path": "SolarApp-extension/preview-house.json",
+      "bytes": 5234,
+      "sha256": "8fe76e904b7408e1918f9b2350f303491b862b1f4390b1bc9ded6cad1be311b3"
+    },
+    {
+      "path": "SolarApp-extension/preview-import.json",
+      "bytes": 3999,
+      "sha256": "457e326896ada7f5f038cdd6c1c2f3d53b66b1fe9af894cb906486daaacc59d0"
+    },
+    {
+      "path": "SolarApp-extension/preview-solar-half.json",
+      "bytes": 5068,
+      "sha256": "f83bba64a9cef34cf7640d46c5d5d277aefdf002e8c06ce7a967f5ff3355ad8b"
+    },
+    {
+      "path": "SolarApp-extension/preview-solar.json",
+      "bytes": 4535,
+      "sha256": "cc2dbdbe0277e9dfb07b00afb59a3c94e715c372d92c086b45a85a2f996470b6"
+    },
+    {
+      "path": "SolarApp-extension/preview.png",
+      "bytes": 18008,
+      "sha256": "c5d3447e4d954970c56a4d3d82d41382678bbe44538f2948ff98c78bb78c892d"
+    },
+    {
+      "path": "SolarApp-extension/README.md",
+      "bytes": 10192,
+      "sha256": "5f9d2808f9ed320c566a8602b8b147b72474ef283a4377ef3e56924fd357da8f"
+    },
+    {
+      "path": "SolarApp-extension/render_preview.py",
+      "bytes": 3180,
+      "sha256": "a5ebbb6160e7bafd4046fc884f8c0f7ebc7828db9d3c8db9835a1ce0a35c14ae"
+    },
+    {
+      "path": "SolarApp-extension/reproduce_house_input.be",
+      "bytes": 10586,
+      "sha256": "82d3509a3b194268add75e65ff42f5afeafa25d05065346ba20a233c56f66142"
+    },
+    {
+      "path": "SolarApp-extension/rotation-preview.gif",
+      "bytes": 327948,
+      "sha256": "bd51eb22adefab99093d4f6871e5b0be362f830240ed3ddedc7e7262423ca15b"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp-TC002-Animated.ax",
+      "bytes": 31073,
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp-TC002-SourceAware.ax",
+      "bytes": 31073,
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp.ax",
+      "bytes": 31073,
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp.before-graphics.ax",
+      "bytes": 24433,
+      "sha256": "10f65fa6ba21cb4659f912ad135e451fc66730cc2e70fb270f32a4677d438d7b"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp.before-house-fix.ax",
+      "bytes": 28507,
+      "sha256": "51ff18c7c1fbe08f8bdded229b6c0bef347d4e7df77b26c55c64182a4fca4238"
+    },
+    {
+      "path": "SolarApp-extension/SolarApp.original.ax",
+      "bytes": 20881,
+      "sha256": "4ab8a9ea8bdd28dfa90e502422636255c4a7dabe43b162ff753981bc114aaef7"
+    },
+    {
+      "path": "SolarApp-extension/test_solarapp.be",
+      "bytes": 10960,
+      "sha256": "0a361e30e2209085ed5eb9c63eb38fe37e4cb1b217c40318f5115af2dda8aee7"
+    },
+    {
+      "path": "SolarApp-extension/verify_extension.py",
+      "bytes": 2103,
+      "sha256": "8d4cb7606252a21912a94f32572392dc5f8d88ba8833af3bc9df8fc6f7da0930"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/.gitattributes",
+      "bytes": 144,
+      "sha256": "d50e699df860422144eba035a463b8c90b6aa77b39e2cc45477298563936e732"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/.gitignore",
+      "bytes": 125,
+      "sha256": "8bca9b8390c37eac4b25d00e802982cf323aee86d87ce0b03b08e30427b51a94"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/cleaning-preview.gif",
+      "bytes": 19601,
+      "sha256": "b4cab0150c976e5772db11bac269a3d7bffb9c691f1a4a68621ad7565b03bedd"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/cooling-preview.gif",
+      "bytes": 11029,
+      "sha256": "3554ec01eb59621f1bc6751ca2b668dbf661fee6c2c74d8c6e71a7da16a223c7"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/example-state.json",
+      "bytes": 266,
+      "sha256": "6ac7a3f7b8cb01561118ffab667dcfba2a24d9988aaf6ebe0aa4983df40da7d3"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/PelletStove.ax",
+      "bytes": 27980,
+      "sha256": "342988cc566fd853290a87b7c57c64a36dad099e519ae4eb5d79ed5b4a9844f6"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/preview.png",
+      "bytes": 19335,
+      "sha256": "0e159306697d5e81e31ba38907cb0fa0a1d888d0a2e830fb62211b76b9576c3b"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/progress-preview.png",
+      "bytes": 10456,
+      "sha256": "b39bdc9d8f90cb3edd81b3736903aefa1b1c9d30d93335fb4785a8d92b5e6583"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/README.md",
+      "bytes": 24876,
+      "sha256": "c05d624fcb69f886149e4869479a88c7ccfe7f63758feb05c860b311deb55ade"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/rotation-preview.gif",
+      "bytes": 154825,
+      "sha256": "7d4ce3a87385dd16935e36ea0fcc4ac419d2598a85ddb8b6abef97a9599a67ad"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/__pycache__/render_preview.cpython-313.pyc",
+      "bytes": 5587,
+      "sha256": "113c571509c5b564f1761d0ab8b1f5fe782f2b136b6a4e22a674a79814fdb987"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/awtrix-small.bdf",
+      "bytes": 21398,
+      "sha256": "7e2e83ab23789330df47b03899b171af6a6d8692d4d0f9e5bf17e634d9027c36"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/cleaning-frames.json",
+      "bytes": 35507,
+      "sha256": "a5d5c6064ebc75c43eed2fba139231faa1ee23e3748fe77e0546ec60b5155b8c"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/cooling-frames.json",
+      "bytes": 24301,
+      "sha256": "6dae88039d480c3c691e811de02a9b9b4e5dee7c942c7d0763766181f4e3ad9b"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/FONT-LICENSE.txt",
+      "bytes": 21674,
+      "sha256": "7db5ddbfb3c4b6bc390f9406d4129a38094af37faaf16ed53666c379e51e596b"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/FONT-NOTICE.md",
+      "bytes": 1005,
+      "sha256": "2d5a100a7acce81a5740a9cccee35263dc3aeb85e9da89dddf722d9f70ecf57f"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/preview-frames.json",
+      "bytes": 200548,
+      "sha256": "9463cfbb961832f1a0cf7fdabf79955a1d2a4796d5143e0088a02119ca24701d"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/progress-frames.json",
+      "bytes": 4648,
+      "sha256": "fff5fcd1e7a39ce732adcd2f2be4e61a2f4fc00adb8f2e618e4705bff723c337"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/render_preview.py",
+      "bytes": 5228,
+      "sha256": "5e5b4f654ca9a272b5725bb455400939d2deb8b8abbf3daf2fe717abffdc0d84"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/test_pelletstove.be",
+      "bytes": 34397,
+      "sha256": "4bf21818d6731f210f3da9bd99b7fa0482665af550e1cc435cf64841ff3c7b16"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/tools/verify.py",
+      "bytes": 5763,
+      "sha256": "7734c0697d5bc1e8f8fad6402bc2720c854d29909a7c67bc9742bac54797033b"
+    },
+    {
+      "path": "com.haassohn.pellets/docs/awtrixng/warning-preview.gif",
+      "bytes": 57408,
+      "sha256": "af30a4595be7441950619c3b7e873734fe67f2a8ccd2a4de2edded121e6feb6e"
+    },
+    {
+      "path": "AWTRIX-Hub-media.zip",
+      "bytes": 3034868,
+      "sha256": "be0bf1a27d2706d407442a6f92541b333c52219ec0dec099aa376dde4874888d"
+    }
+  ],
+  "archive_sha256": "3f76ee078eff73a3ab8a93e88ef5ebfd1fb1df46c40cfd6c8fbc18c1de4f3ba0"
+}

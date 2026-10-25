@@ -1,0 +1,6 @@
+/work/
+**/__pycache__/
+*.py[cod]
+/SolarApp/preview-*.json
+/SolarApp/animation-frames.json
+/PelletStove/tools/*-frames.json

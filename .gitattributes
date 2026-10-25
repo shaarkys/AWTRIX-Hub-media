@@ -1,0 +1,12 @@
+* text=auto
+*.ax text eol=lf
+*.be text eol=lf
+*.inc text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.bdf -text
+**/FONT-LICENSE.txt -text
+*.png binary
+*.gif binary
+*.zip binary

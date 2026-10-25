@@ -1,0 +1,45 @@
+{
+  "captured_at": "2026-10-24",
+  "sources": [
+    {
+      "label": "SolarApp.ax",
+      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp.ax",
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "label": "SolarApp-TC002-Animated.ax (byte-identical)",
+      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp-TC002-Animated.ax",
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "label": "SolarApp-TC002-SourceAware.ax (byte-identical)",
+      "path": "C:/Users/breti/Documents/GitHub/SolarApp-extension/SolarApp-TC002-SourceAware.ax",
+      "sha256": "352a7faf37dea5bb9490a3bf9a0eff10efc7e90d7a45cac8763d7720a19e2bea"
+    },
+    {
+      "label": "PelletStove.ax",
+      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/PelletStove.ax",
+      "sha256": "76af4bf3f146dc44bff95b57384b970e1561cb7a6a5c372c2d6e819e86f7ed86"
+    },
+    {
+      "label": "PelletStove Berry capture harness",
+      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/test_pelletstove.be",
+      "sha256": "db20cc235b96f21cbc97de787fd9299536e611160dce22766dba2e2c1727995e"
+    },
+    {
+      "label": "official AWTRIX NG small BDF",
+      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/awtrix-small.bdf",
+      "sha256": "7e2e83ab23789330df47b03899b171af6a6d8692d4d0f9e5bf17e634d9027c36"
+    },
+    {
+      "label": "font license",
+      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/FONT-LICENSE.txt",
+      "sha256": "7db5ddbfb3c4b6bc390f9406d4129a38094af37faaf16ed53666c379e51e596b"
+    },
+    {
+      "label": "font provenance notice",
+      "path": "C:/Users/breti/Documents/GitHub/com.haassohn.pellets/docs/awtrixng/tools/FONT-NOTICE.md",
+      "sha256": "2d5a100a7acce81a5740a9cccee35263dc3aeb85e9da89dddf722d9f70ecf57f"
+    }
+  ]
+}
